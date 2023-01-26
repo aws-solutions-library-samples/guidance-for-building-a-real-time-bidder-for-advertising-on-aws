@@ -1,0 +1,13 @@
+---
+resources:
+  limits: null
+replicaCount: 1
+awsRegion: ${AWS_REGION}
+nodeSelector:
+  pool: application
+config:
+  LOG_LEVEL: "debug"
+  GOMAXPROCS: "60"
+  AWS_REGION: "${AWS_REGION}"
+  AWS_DEFAULT_REGION: "${AWS_REGION}"
+  BUDGET_SYNC_PERIOD_SECONDS: "10s"

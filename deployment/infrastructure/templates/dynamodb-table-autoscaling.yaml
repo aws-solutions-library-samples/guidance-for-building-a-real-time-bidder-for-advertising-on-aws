@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB table autoscaling
+
+Parameters:
+  TableName:
+    Type: String
+    Description: DynamoDB table name to autoscale
+
+  ReadMinCapacity:
+    Type: Number
+    Description: Minimum read capacity units provisioned
+    Default: "1"
+
+  ReadMaxCapacity:
+    Type: Number
+    Description: Maximum read capacity units provisioned
+    Default: "25"
+
+  ReadTargetUtilization:
+    Type: Number
+    Description: Target utilization of read capacity in percent
+    Default: "80"
+
+  ReadScaleInCooldown:
+    Type: Number
+    Description: Read capacity scale in cooldown time in seconds
+    Default: "60"
+
+  ReadScaleOutCooldown:
+    Type: Number
+    Description: Read capacity scale out cooldown time in seconds
+    Default: "60"
+
+  WriteMinCapacity:
+    Type: Number
+    Description: Minimum write capacity units provisioned
+    Default: "1"
+
+  WriteMaxCapacity:
+    Type: Number
+    Description: Maximum write capacity units provisioned
+    Default: "25"
+
+  WriteTargetUtilization:
+    Type: Number
+    Description: Target utilization of write capacity in percent
+    Default: "80"
+
+  WriteScaleInCooldown:
+    Type: Number
+    Description: Write capacity scale in cooldown time in seconds
+    Default: "60"
+
+  WriteScaleOutCooldown:
+    Type: Number
+    Description: Write capacity scale out cooldown time in seconds
+    Default: "60"
+
+Conditions:
+  ReadScaling: !Not [!Equals [!Ref ReadMinCapacity, !Ref ReadMaxCapacity]]
+  WriteScaling: !Not [!Equals [!Ref WriteMinCapacity, !Ref WriteMaxCapacity]]
+
+Resources:
+  ReadScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: ReadScaling
+
+    Properties:
+      MinCapacity: !Ref ReadMinCapacity
+      MaxCapacity: !Ref ReadMaxCapacity
+      ResourceId: !Sub "table/${TableName}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ServiceNamespace: dynamodb
+      ScalableDimension: dynamodb:table:ReadCapacityUnits
+
+  ReadScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: ReadScaling
+
+    Properties:
+      PolicyName: ReadAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ReadScalableTarget
+
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: !Ref ReadTargetUtilization
+        ScaleInCooldown: !Ref ReadScaleInCooldown
+        ScaleOutCooldown: !Ref ReadScaleOutCooldown
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+  WriteScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: WriteScaling
+
+    Properties:
+      MinCapacity: !Ref WriteMinCapacity
+      MaxCapacity: !Ref WriteMaxCapacity
+      ResourceId: !Sub "table/${TableName}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ServiceNamespace: dynamodb
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+
+  WriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: WriteScaling
+
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WriteScalableTarget
+
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: !Ref WriteTargetUtilization
+        ScaleInCooldown: !Ref WriteScaleInCooldown
+        ScaleOutCooldown: !Ref WriteScaleOutCooldown
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization

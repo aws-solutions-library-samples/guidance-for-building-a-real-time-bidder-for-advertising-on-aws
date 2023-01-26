@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-budgets
+spec:
+  template:
+    metadata:
+      labels:
+        app: generate-budgets
+    spec:
+      nodeSelector:
+        pool: basic-arm
+      restartPolicy: Never
+      containers:
+        - image: ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_PREFIX}datagen:latest
+          name: generate-budgets
+          imagePullPolicy: Always
+          args:
+            - -output=dynamodb
+            - -type=budgets
+            - -table=${DYNAMODB_TABLENAME_PREFIX}budget
+            - -low=1
+            - -high=${DATAGEN_ITEMS_PER_JOB}
+            - -concurrency=${DATAGEN_CONCURRENCY}
+          env:
+            - name: AWS_REGION
+              value: ${AWS_REGION}

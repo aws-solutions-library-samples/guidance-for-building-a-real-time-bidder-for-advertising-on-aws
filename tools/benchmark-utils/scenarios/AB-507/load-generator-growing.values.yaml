@@ -1,0 +1,17 @@
+duration: "10m"
+
+resources: {}
+numberOfJobs: 40
+
+initialRatePerJob: 1
+# 2,000,000 / 40 = 50,000
+# 50,000 / 600 = 84
+slope: 84
+
+workers: 256
+maxWorkers: 256
+
+trackErrors: true
+
+nodeSelector:
+  pool: benchmark

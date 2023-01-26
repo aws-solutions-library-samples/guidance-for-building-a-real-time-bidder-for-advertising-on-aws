@@ -1,0 +1,13 @@
+# Linter runner with our dependencies.
+
+ARG REGISTRY
+FROM ${REGISTRY}/golangci-lint:v1.39-alpine
+
+RUN apk add gcc musl-dev make
+
+WORKDIR /code
+COPY go.mod go.sum /code/
+RUN go mod download
+# Rebuild libzstd.a: due to the limitations of the Go build system, <https://github.com/valyala/gozstd/issues/20>,
+# gozstd has to include that library prebuilt (for a specific libc) to work with go get.
+RUN cd /go/pkg/mod/github.com/!clearcode!h!q/gozstd@* && make clean && make -j libzstd.a

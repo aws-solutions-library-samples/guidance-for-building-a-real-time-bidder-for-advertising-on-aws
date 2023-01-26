@@ -1,0 +1,396 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS VPC - Public subnets only'
+
+Parameters:
+  VpcBlock:
+    Type: String
+    Default: 192.168.0.0/16
+    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+
+  Subnet01Block:
+    Type: String
+    Default: 192.168.64.0/24
+    Description: CidrBlock for subnet 01 within the VPC
+
+  Subnet02Block:
+    Type: String
+    Default: 192.168.65.0/24
+    Description: CidrBlock for subnet 02 within the VPC
+
+  Subnet03Block:
+    Type: String
+    Default: 192.168.66.0/24
+    Description: CidrBlock for subnet 03 within the VPC. This is used only if the region has more than 2 AZs.
+  
+  Subnet04Block:
+    Type: String
+    Default: 192.168.67.0/24
+    Description: Public Subnet, CidrBlock for subnet 04 within the VPC. This is used only if the region has more than 2 AZs.
+
+  EksClusterName:
+    Description: EKS Cluster Name
+    Type: String
+  # root stack name added to use in C9 instance name
+  RootStackName:
+    Type: String
+    Description: Root Stack Name
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Worker Network Configuration'
+        Parameters:
+          - VpcBlock
+          - Subnet01Block
+          - Subnet02Block
+          - Subnet03Block
+          - Subnet04Block
+          - EksClusterName
+
+Conditions:
+  Has2Azs:
+    Fn::Or:
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - ap-south-1
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - ap-northeast-2
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - ca-central-1
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - cn-north-1
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - sa-east-1
+      - Fn::Equals:
+          - { Ref: 'AWS::Region' }
+          - us-west-1
+
+  HasMoreThan2Azs:
+    Fn::Not:
+      - Condition: Has2Azs
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksClusterName}-vpc'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W60
+            reason: The project can generate a significant traffic volume.
+
+  Subnet01:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 01
+    Properties:
+      MapPublicIpOnLaunch: false
+      AvailabilityZone:
+        Fn::Select:
+          - '0'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: Subnet01Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Subnet01'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+
+  Subnet02:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 02
+    Properties:
+      MapPublicIpOnLaunch: false
+      AvailabilityZone:
+        Fn::Select:
+          - '1'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: Subnet02Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Subnet02'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+
+  Subnet03:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 03
+    Properties:
+      MapPublicIpOnLaunch: false
+      AvailabilityZone:
+        Fn::Select:
+          - '2'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: Subnet03Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Subnet03'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+
+  Subnet04:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 04
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Select:
+          - '3'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: Subnet04Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Subnet04'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: Subnet04
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: Subnet04
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: Subnet04
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${EksClusterName} Public Subnets'
+        - Key: Network
+          Value: Public
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    DependsOn: NatPublicIP
+    Properties: 
+      SubnetId: !Ref Subnet04
+      AllocationId: !GetAtt NatPublicIP.AllocationId
+
+  NatPublicIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPC
+    Properties:
+      Domain: vpc
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: [Subnet01, Subnet02, Subnet03]
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRoute:
+    DependsOn: NatGateway
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  Subnet01RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet01
+      RouteTableId: !Ref PrivateRouteTable
+
+  Subnet02RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet02
+      RouteTableId: !Ref PrivateRouteTable
+
+  Subnet03RouteTableAssociation:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet03
+      RouteTableId: !Ref PrivateRouteTable
+
+  Subnet04RouteTableAssociation:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet04
+      RouteTableId: !Ref PublicRouteTable
+  Role:
+    Type: 'AWS::IAM::Role'
+    DependsOn: LogGroup
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'vpc-flow-logs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: 'flowlogs-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogGroups'
+            - 'logs:DescribeLogStreams'
+            Resource: !GetAtt 'LogGroup.Arn'
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: 7
+  FlowLog:
+    Type: 'AWS::EC2::FlowLog'
+    DependsOn: [ VPC, Role ]
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt 'Role.Arn'
+      LogGroupName: !Ref LogGroup
+      ResourceId: !Ref VPC
+      ResourceType: 'VPC'
+      TrafficType: ALL
+
+#  AWSCloud9SSMAccessRole:
+#      Type: AWS::IAM::Role
+#      Properties:
+#        RoleName: RTB-AWSCloud9SSMAccessRole
+#        Description: Service role for Cloud9 access
+#        Path: /service-role/
+#        ManagedPolicyArns:
+#          - arn:aws:iam::aws:policy/AWSCloud9SSMInstanceProfile
+#          - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
+#        AssumeRolePolicyDocument: |
+#          {
+#            "Version": "2012-10-17",
+#            "Statement": [
+#              {
+#                "Effect": "Allow",
+#                "Principal": {
+#                  "Service": [
+#                    "ec2.amazonaws.com",
+#                    "cloud9.amazonaws.com"
+#                  ]
+#                },
+#                "Action": "sts:AssumeRole"
+#              }
+#            ]
+#          }
+#  AWSCloud9SSMInstanceProfile:
+#    Type: AWS::IAM::InstanceProfile
+#    Properties:
+#      InstanceProfileName: AWSCloud9SSMInstanceProfile
+#      Path: /cloud9/
+#      Roles:
+#        - !Ref AWSCloud9SSMAccessRole
+#
+#  C9Instance:
+#    Type: AWS::Cloud9::EnvironmentEC2
+#    DependsOn: [AWSCloud9SSMAccessRole, Subnet04]
+#    Properties: 
+#      AutomaticStopTimeMinutes: 30
+#      ConnectionType: CONNECT_SSM
+#      Description: !Sub '${AWS::StackName}-cloud9 instance'
+#      ImageId: amazonlinux-2-x86_64
+#      InstanceType: t3.xlarge
+#      # simplify the instance name
+#      Name: !Join
+#        - ''
+#        - - !Ref RootStackName
+#          - '-cloud9Instance' 
+#      Repositories: 
+#        - RepositoryUrl: https://git-codecommit.us-west-2.amazonaws.com/v1/repos/RTBCodeKitRepo
+#          PathComponent: /RTBCodeKitRepo
+#      SubnetId: !Ref Subnet04
+
+Outputs:
+  SubnetIds:
+    Description: All subnets in the VPC
+    Value:
+      Fn::If:
+        - HasMoreThan2Azs
+        - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
+        - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02 ] ]
+  SubnetId:
+    Description: cloud9 subnet id
+    Value: !Ref Subnet04
+
+  VpcId:
+    Description: The VPC Id
+    Value: !Ref VPC
+  
+  NetworkBlock:
+    Description: The VPC Network CIDR
+    Value: !Ref VpcBlock
+
+  PublicRouteTableId:
+    Description: Route table Id
+    Value: !Ref PublicRouteTable
+  
+  PrivateRouteTableId:
+    Description: Route table Id
+    Value: !Ref PrivateRouteTable
+  
+#  Cloud9IDEURL:
+#    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/${C9Instance}?region=${AWS::Region}=
+#
+#  Cloud9EnvID:
+#    Description: cloud9 instance enevironment ID
+#    Value: !Ref C9Instance
+    

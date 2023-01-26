@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidder
+spec:
+  replicas: 29
+  template:
+    spec:
+      nodeSelector:
+        pool: application
+      containers:
+        - name: bidder
+          resources:
+            limits:
+              cpu: "2"
+              memory: "8Gi"

@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "e2e"
+version = "0.1.0"
+description = ""
+authors = ["AWS Bidder Team <aws-bidder@clearcode.cc>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pytest = "^6.2.2"
+requests = "^2.25.1"
+pytest-cov = "^2.11.1"
+pylint = "^2.7.2"
+mypy = "^0.812"
+pycodestyle = "^2.6.0"
+PyYAML = "^5.4.1"
+pexpect = "^4.8.0"
+waiting = "^1.4.1"
+boto3 = "^1.17.20"
+pytest-xdist = "^2.2.1"
+amazon-dax-client = "^1.1.8"
+aerospike = "^5.0.0"
+kinesis-python = "^0.2.1"
+aws-kinesis-agg = "^1.1.7"
+zstandard = "^0.15.2"
+
+[tool.poetry.dev-dependencies]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers -rw --cov-report=term-missing:skip-covered --cov-fail-under=100"
+filterwarnings = [
+    "error",
+    # In generated code, occurs only if using protobuf installed without native code.
+    "ignore::DeprecationWarning:aws_kinesis_agg.kpl_pb2",
+]
+log_level = "debug"
+testpaths = "tests"
+junit_family = "xunit2"
+xfail_strict = true
+markers = [
+    "dax: mark a test as using Amazon DAX",
+    "aerospike: mark a test as using Aerospike",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

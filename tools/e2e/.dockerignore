@@ -1,0 +1,8 @@
+**/__pycache__/
+deployment/
+Dockerfile
+.dockerignore
+.mypy_cache/
+.pytest_cache/
+.coverage
+Makefile

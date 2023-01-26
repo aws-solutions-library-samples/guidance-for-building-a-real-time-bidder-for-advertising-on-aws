@@ -1,0 +1,61 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: trimmer
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trimmer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: trimmer
+roleRef:
+  apiGroup: ""
+  kind: Role
+  name: trimmer
+subjects:
+  - kind: ServiceAccount
+    name: trimmer
+    namespace: default
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: test-trimmer
+spec:
+  schedule: "@hourly"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            kubernetes.io/arch: arm64
+          serviceAccountName: trimmer
+          containers:
+            - name: test-trimmer
+              image: ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/helm
+              imagePullPolicy: Always
+              command:
+                # do not delete any younger than 3 hours
+                - /bin/bash
+                - -c
+                - helm list --time-format 'Y2006M01D02H15' |
+                  grep e2e |
+                  grep -v -e aerospike |
+                  grep -v -e $(date -d now +"Y%YM%mD%dH%H") |
+                  grep -v -e $(date -d "now-1 hours" +"Y%YM%mD%dH%H") |
+                  grep -v -e $(date -d "now-2 hours" +"Y%YM%mD%dH%H") |
+                  grep -v -e $(date -d "now-3 hours" +"Y%YM%mD%dH%H") |
+                  sed 's/\s.*//' |
+                  xargs --no-run-if-empty helm uninstall
+          restartPolicy: Never

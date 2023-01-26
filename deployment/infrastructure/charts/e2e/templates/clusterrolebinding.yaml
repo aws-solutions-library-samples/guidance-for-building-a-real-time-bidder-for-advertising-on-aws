@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+
+metadata:
+  name: {{ include "e2e.fullname" . }}
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "e2e.fullname" . }}
+
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "e2e.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

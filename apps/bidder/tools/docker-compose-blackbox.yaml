@@ -1,0 +1,59 @@
+version: "3.4"
+
+services:
+
+  blackbox-tests:
+    image: "blackbox"
+    build:
+      context: ./apps/bidder
+      dockerfile: ./tools/Dockerfile.blackbox
+      args:
+        REGISTRY: ${REGISTRY}
+    networks:
+      - localstack
+      - bidder
+    depends_on:
+      - bidder
+    volumes:
+      - ./apps/bidder:/code
+    working_dir: /code
+    env_file:
+      - ./apps/bidder/env/test.env
+
+  bidder:
+    image: ${REGISTRY}/bidder:${BIDDER_IMAGE_VERSION}
+    networks:
+      - localstack
+      - bidder
+    ports:
+      - 8090:8090
+      - 8091:8091
+    depends_on:
+      - localstack
+    env_file:
+      - ./apps/bidder/env/test.env
+
+  localstack:
+    image: ${REGISTRY}/localstack:0.12.5
+    networks:
+      - localstack
+    ports:
+      - ${LOCALSTACK_PORT-4566}:${LOCALSTACK_PORT-4566}
+    environment:
+      - SERVICES=dynamodb,kinesis
+      - START_WEB=0
+    volumes:
+      - ./tools/localstack/provisioning:/docker-entrypoint-initaws.d:ro
+
+  datagen:
+    image: ${REGISTRY}/datagen:latest
+    networks:
+      - localstack
+    depends_on:
+      - localstack
+    env_file:
+      - ./apps/bidder/env/test.env
+
+networks:
+  localstack: ~
+  bidder: ~

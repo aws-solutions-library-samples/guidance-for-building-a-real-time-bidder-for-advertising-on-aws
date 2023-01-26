@@ -1,0 +1,778 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Application root stack (SO9033) - AWS Real Time Bidder for Advertising-V1.0.2 - Template
+
+Parameters:
+  RootStackName:
+    Type: String
+    Description: Root Stack Name
+
+  EksServiceRoleArn:
+    Type: String
+    Description: Service role of the EKS cluster
+
+  EksWorkerRoleArn:
+    Type: String
+    Description: Service role of the EKS cluster
+
+  Variant:
+    Type: String
+    Description: Variant of infrastructure to deploy
+    Default: 'Basic'
+    AllowedValues:
+      - 'Basic'
+      - 'BasicDax'
+      - 'AerospikeDataLoad'
+      - 'BenchmarkSmallDax'
+      - 'BenchmarkMediumDax'
+      - 'BenchmarkSmallDynamoDB'
+      - 'BenchmarkMediumDynamoDB'
+      - 'BenchmarkHTTP'
+      - 'BenchmarkKinesis'
+      - 'Benchmark'
+      - 'BenchmarkMediumAerospike'
+      - 'Hold'
+      - 'HoldAerospike'
+      - 'BenchmarkSingleAZ'
+      - 'BenchmarkStaticCPU'
+      - 'BenchmarkHTTPSingleAZ'
+      - 'BenchmarkAutoscale'
+      - 'BidderE2E'
+      - 'CodekitAerospike'
+      - 'CodekitDynamoDB'
+      - 'BenchmarkAB-629'
+
+Mappings:
+  VariantConfig:
+    CodekitAerospike: # Variant for development and basic tests
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+
+      AerospikeNodeGroupSize: '8'
+      AerospikeInstanceType: 'i3en.24xlarge'
+
+      BasicArmNodeGroupSize: '1'
+      BasicX86NodeGroupSize: '1'
+      BasicArmInstanceType: 'm6g.16xlarge' #
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '512'
+      KinesisBenchmarkMaxShardCount: '512'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    CodekitDynamoDB: # Variant for development and basic tests
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '500' # change to 1024 after quota increase
+      KinesisBenchmarkMaxShardCount: '500' # change to 1024 after quota increase
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    Basic: # Variant for development and basic tests
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.t3.small'     # DAX node instance type
+      DaxMinNodeCount:              '0'                # Minimum number of DAX nodes
+      DaxMaxNodeCount:              '0'                # Maximum number of DAX nodes
+
+      DaxScaleInUtilization:        '40'               # CPU utilization below what DAX will be scaled in
+      DaxScaleOutUtilization:       '75'               # CPU utilization above what DAX will be scaled out
+      DaxScaleInEvaluationMinutes:  '10'               # How many minutes the utilization must be below the level before scale in
+      DaxScaleOutEvaluationMinutes: '2'                # How many minutes the utilization must be above the level before scale out
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '0'   # Minimum number of shards
+      KinesisBenchmarkMaxShardCount:             '0'   # Maximum number of shards
+
+      KinesisBenchmarkScaleOutUtilization:       '80'  # Utilization above what Kinesis will be scaled out
+      KinesisBenchmarkScaleInUtilization:        '50'  # Utilization below what Kinesis will be scaled in
+      KinesisBenchmarkScaleOutPercent:           '30'  # In percent capacity change for scale out
+      KinesisBenchmarkScaleInPercent:            '-20' # In percent capacity change for scale in
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'   # How many minutes the utilization must be above the level before scale out
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'  # How many minutes the utilization must be below the level before scale in
+
+    BasicDax: # Variant for development and basic tests with DAX enabled
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.t3.small'
+      DaxMinNodeCount:              '1'
+      DaxMaxNodeCount:              '1'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '0'
+      KinesisBenchmarkMaxShardCount:             '0'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '30'
+      KinesisBenchmarkScaleInPercent:            '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    AerospikeDataLoad: # Variant for loading data to Aerospike
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '1'
+      AerospikeInstanceType: 'i3en.24xlarge'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.t3.small'
+      DaxMinNodeCount:              '0'
+      DaxMaxNodeCount:              '0'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '0'
+      KinesisBenchmarkMaxShardCount:             '0'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '30'
+      KinesisBenchmarkScaleInPercent:            '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    BenchmarkSmallDax:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.4xlarge'
+      DaxNodeCount: '3'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '0'
+      KinesisBenchmarkMaxShardCount: '0'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    BenchmarkMediumDax:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '10'
+      EksApplicationNodeGroupSizeMax: '10'
+      EksBenchmarkNodeGroupSizeMin: '10'
+      EksBenchmarkNodeGroupSizeMax: '10'
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.8xlarge'
+      DaxMinNodeCount: '11'
+      DaxMaxNodeCount: '11'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '0'
+      KinesisBenchmarkMaxShardCount: '0'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    BenchmarkSmallDynamoDB:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.8xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '300'
+      KinesisBenchmarkMaxShardCount: '300'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    BenchmarkMediumDynamoDB:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '10'
+      EksApplicationNodeGroupSizeMax: '10'
+      EksBenchmarkNodeGroupSizeMin: '10'
+      EksBenchmarkNodeGroupSizeMax: '10'
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.8xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '3000'
+      KinesisBenchmarkMaxShardCount: '3000'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    Benchmark: # Single node setup, used for benchmarking without Kinesis
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.r5.2xlarge'
+      DaxMinNodeCount:              '0'
+      DaxMaxNodeCount:              '0'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '0'
+      KinesisBenchmarkMaxShardCount:             '0'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '30'
+      KinesisBenchmarkScaleInPercent:            '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    BenchmarkMediumAerospike:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '10'
+      EksApplicationNodeGroupSizeMax: '10'
+      EksBenchmarkNodeGroupSizeMin: '10'
+      EksBenchmarkNodeGroupSizeMax: '10'
+
+      AerospikeNodeGroupSize: '8'
+      AerospikeInstanceType: 'i3en.24xlarge'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '3000'
+      KinesisBenchmarkMaxShardCount: '3000'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    Hold:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3en.24xlarge'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '0'
+      KinesisBenchmarkMaxShardCount: '0'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    HoldAerospike:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '8'
+      AerospikeInstanceType: 'i3en.24xlarge'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.2xlarge'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '0'
+      KinesisBenchmarkMaxShardCount: '0'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+    BenchmarkKinesis: # Single node setup, used for benchmarking the HTTP server with enabled Kinesis
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.r5.2xlarge'
+      DaxMinNodeCount:              '0'
+      DaxMaxNodeCount:              '0'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '300'
+      KinesisBenchmarkMaxShardCount:             '300'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '30'
+      KinesisBenchmarkScaleInPercent:            '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    BenchmarkAutoscale:
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '10'
+      EksBenchmarkNodeGroupSizeMin: '2'
+      EksBenchmarkNodeGroupSizeMax: '10'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.r5.2xlarge'
+      DaxMinNodeCount:              '1'
+      DaxMaxNodeCount:              '11'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '100'
+      KinesisBenchmarkMaxShardCount:             '1000'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '50'
+      KinesisBenchmarkScaleInPercent:            '-33'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    BidderE2E: # Variant for e2e CI services with DAX enabled
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '0'
+      EksApplicationNodeGroupSizeMax: '0'
+      EksBenchmarkNodeGroupSizeMin: '0'
+      EksBenchmarkNodeGroupSizeMax: '0'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      # These additionally run e2e tests and their bidders.
+      BasicArmNodeGroupSize: '2'
+      # And these run the e2e Aerospike cluster.
+      BasicX86NodeGroupSize: '2'
+      # m6g.large insteaces allow 29 pods vs 8 pods on an m6g.medium (twice cheaper) instance
+      # (<https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt>).
+      BasicArmInstanceType: 'm6g.large'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.t3.small'
+      DaxMinNodeCount:              '1'
+      DaxMaxNodeCount:              '1'
+
+      DaxScaleInUtilization:        '40'
+      DaxScaleOutUtilization:       '75'
+      DaxScaleInEvaluationMinutes:  '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '0'
+      KinesisBenchmarkMaxShardCount:             '0'
+
+      KinesisBenchmarkScaleOutUtilization:       '80'
+      KinesisBenchmarkScaleInUtilization:        '50'
+      KinesisBenchmarkScaleOutPercent:           '30'
+      KinesisBenchmarkScaleInPercent:            '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'
+
+    BenchmarkAB-629: # AB-629-Full-system-benchmark-with-DynamoDB
+      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType: 'dax.r5.2xlarge'
+      DaxMinNodeCount: '0'
+      DaxMaxNodeCount: '0'
+
+      DaxScaleInUtilization: '40'
+      DaxScaleOutUtilization: '75'
+      DaxScaleInEvaluationMinutes: '10'
+      DaxScaleOutEvaluationMinutes: '2'
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount: '1024'
+      KinesisBenchmarkMaxShardCount: '1024'
+
+      KinesisBenchmarkScaleOutUtilization: '80'
+      KinesisBenchmarkScaleInUtilization: '50'
+      KinesisBenchmarkScaleOutPercent: '30'
+      KinesisBenchmarkScaleInPercent: '-20'
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'
+      KinesisBenchmarkScaleInEvaluationMinutes: '10'
+
+Resources:
+  VPC:
+    Type: AWS::CloudFormation::Stack
+
+    Properties:
+      TemplateURL: ./templates/vpc.yaml
+      Parameters:
+        EksClusterName: !Ref AWS::StackName
+        RootStackName: !Ref RootStackName # adding root stack name to fix cloud9 client error
+      Tags:
+        - Key: stackName
+          Value: !Ref AWS::StackName
+
+  VPCEndpoints:
+    Type: AWS::CloudFormation::Stack
+
+    Properties:
+      TemplateURL: ./templates/vpc-endpoints.yaml
+      Parameters:
+        EksVpcId: !GetAtt [VPC, Outputs.VpcId]
+        EksRouteTableId: !GetAtt [VPC, Outputs.PrivateRouteTableId]
+        EksVpcSubnetIds: !GetAtt [VPC, Outputs.SubnetIds]
+        EksSecurityGroupId: !GetAtt [EKS, Outputs.ClusterSecurityGroupId]
+      Tags:
+        - Key: stackName
+          Value: !Ref AWS::StackName
+
+  EKS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./templates/eks.yaml
+      Parameters:
+        EksClusterName:              !Ref RootStackName
+        EksServiceRoleArn:           !Ref EksServiceRoleArn
+        EksWorkerRoleArn:            !Ref EksWorkerRoleArn
+        EksVpcId:                    !GetAtt [VPC, Outputs.VpcId]
+        EksVpcSubnetIds:             !GetAtt [VPC, Outputs.SubnetIds]
+        EksVpcNetworkBlock:          !GetAtt [VPC, Outputs.NetworkBlock]
+        BasicArmNodeGroupSize:       !FindInMap [ VariantConfig, !Ref Variant, BasicArmNodeGroupSize ]
+        BasicArmInstanceType:        !FindInMap [ VariantConfig, !Ref Variant, BasicArmInstanceType ]
+        BasicX86NodeGroupSize:       !FindInMap [ VariantConfig, !Ref Variant, BasicX86NodeGroupSize ]
+        BasicX86InstanceType:        't3.medium'
+
+        ApplicationNodeGroupSizeMin: !FindInMap [ VariantConfig, !Ref Variant, EksApplicationNodeGroupSizeMin ]
+        ApplicationNodeGroupSizeMax: !FindInMap [ VariantConfig, !Ref Variant, EksApplicationNodeGroupSizeMax ]
+        ApplicationInstanceType:      !FindInMap [ VariantConfig, !Ref Variant, EksApplicationNodeGroupInstanceType ]
+        ApplicationAmiType:          'AL2_ARM_64'
+
+        BenchmarkNodeGroupSizeMin:   !FindInMap [ VariantConfig, !Ref Variant, EksBenchmarkNodeGroupSizeMin ]
+        BenchmarkNodeGroupSizeMax:   !FindInMap [ VariantConfig, !Ref Variant, EksBenchmarkNodeGroupSizeMax ]
+        BenchmarkInstanceType:        !FindInMap [ VariantConfig, !Ref Variant, EksBenchmarkNodeGroupInstanceType ]
+        BenchmarkAmiType:            'AL2_ARM_64'
+
+        AerospikeNodeGroupSize:      !FindInMap [ VariantConfig, !Ref Variant, AerospikeNodeGroupSize ]
+        AerospikeInstanceType:       !FindInMap [ VariantConfig, !Ref Variant, AerospikeInstanceType ]
+
+        StaticCPUManagerPolicy:      !FindInMap [ VariantConfig, !Ref Variant, StaticCPUManagerPolicy ]
+        SingleAZ:                    !FindInMap [ VariantConfig, !Ref Variant, SingleAZ ]
+      Tags:
+        - Key: stackName
+          Value: !Ref AWS::StackName
+
+  KinesisBenchmark:
+    Type: AWS::CloudFormation::Stack
+
+    Properties:
+      TemplateURL: ./templates/kinesis.yaml
+      Parameters:
+        # BucketName:                   !Sub '${AWS::StackName}-bids-benchmark' # default bucket name aws-bidder-bids is not a unique name and should follow s3 naming rules
+        BucketName:                   !Join
+                                        - ''
+                                        - - !Ref RootStackName
+                                          - '-bids-benchmark'
+        DataStreamName:               !Sub '${AWS::StackName}-bids-benchmark'
+        #DeliveryStreamName:           !Sub '${AWS::StackName}-bids-benchmark'
+        DataStreamShardCount:         !FindInMap [ VariantConfig, !Ref Variant, KinesisBenchmarkMinShardCount ]
+        DeliveryStreamBufferInterval: '60'
+        DeliveryStreamBufferSize:     '128'
+        DeliveryStreamCompression:    'GZIP'
+        ProducerRoleARN: !Ref EksWorkerRoleArn
+      Tags:
+        - Key: stackName
+          Value: !Ref AWS::StackName
+  
+  CnineInstance:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPC
+    Properties:
+      TemplateURL: ./templates/cloud9.yaml
+      Parameters:
+        RootStackName: !Ref RootStackName
+        Subnet04: !GetAtt [VPC, Outputs.SubnetId]
+
+Outputs:
+  StackName:
+    Description: The Name of the Application Stack
+    Value: !Ref AWS::StackName
+    Export:
+      Name: StackName
+
+  Cloud9IDEURL:
+    Description: IDE URL to access cloud9
+    Value: !GetAtt CnineInstance.Outputs.Cloud9IDEURL
+
+  Cloud9EnvID:
+    Description: cloud9 instance enevironment ID
+    Value: !GetAtt CnineInstance.Outputs.Cloud9EnvID
+  
+

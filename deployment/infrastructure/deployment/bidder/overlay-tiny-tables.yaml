@@ -1,0 +1,6 @@
+---
+config:
+  DYNAMODB_DEVICE_TABLE: "tiny-device"
+  DYNAMODB_AUDIENCE_TABLE: "tiny-audience"
+  DYNAMODB_CAMPAIGN_TABLE: "tiny-campaign"
+  DYNAMODB_BUDGET_TABLE: "tiny-budget"

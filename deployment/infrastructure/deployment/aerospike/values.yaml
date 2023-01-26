@@ -1,0 +1,33 @@
+# set by Makefile based on available node count for any other variant than basic
+dbReplicas: 1
+
+nodeSelector:
+  pool: basic-x86
+
+antiAffinity: hard
+autoRolloutConfig: true
+enableAerospikePrometheusExporter: true
+
+aerospikeNamespace: bidder
+aerospikeNamespaceMemoryGB: 2
+aerospikeReplicationFactor: 1
+
+image:
+  tag: 5.5.0.3
+
+persistenceStorage:
+  - name: data
+    enabled: true
+    mountPath: /data
+    size: 2Gi
+    volumeMode: Filesystem
+    accessMode: ReadWriteOnce
+    storageClass: csi-aws-ebs
+
+volumes:
+  - name: nvme
+    mountPath: /nvme
+    template:
+      hostPath:
+        path: /nvme/disk # configured by nvme-provisioner
+        type: Directory  # require existing directory

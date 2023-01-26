@@ -1,0 +1,22 @@
+duration: "5m"
+
+resources:
+  limits:
+    cpu: 4
+    memory: 8Gi
+
+numberOfJobs: 140
+
+initialRatePerJob: 10
+slope: 10
+
+workers: 4
+maxWorkers: 64
+
+trackErrors: true
+
+image:
+  tag: "8fee6486f0241c37adbc160391d8a4002519439f"
+
+nodeSelector:
+  pool: benchmark

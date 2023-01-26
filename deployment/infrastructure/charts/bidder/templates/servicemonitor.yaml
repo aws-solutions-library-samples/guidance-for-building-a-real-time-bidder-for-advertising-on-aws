@@ -1,0 +1,19 @@
+{{ if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "bidder.labels" . | nindent 4 }}
+  name: {{ include "bidder.fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      app: bidder-internal
+  endpoints:
+    - targetPort: {{ .Values.serviceInternal.port }}
+      metricRelabelings:
+        # prefix metric names with "bidder_"
+        - sourceLabels: ["__name__"]
+          targetLabel: "__name__"
+          replacement: "bidder_$1"
+{{ end }}

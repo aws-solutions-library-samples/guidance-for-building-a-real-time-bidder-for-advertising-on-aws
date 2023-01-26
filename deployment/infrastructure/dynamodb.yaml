@@ -1,0 +1,416 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB tables
+
+Parameters:
+  Variant:
+    Type: String
+    Description: Variant of infrastructure to deploy
+    AllowedValues:
+    - Basic
+    - BenchmarkDynamoDB
+    - BenchmarkAutoscale
+    - BenchmarkAutoscale
+    - CodekitDynamoDB
+    Default: 'Basic'
+    
+  EksWorkerRoleARN:
+    Type: String
+    Description: IAM Role of EKS nodes
+
+  EksAccessRoleARN:
+    Type: String
+    Description: IAM Role that gives access to a EKS Cluster
+    
+  TableNamePrefix:
+    Type: String
+    Default: ''
+
+Mappings:
+  VariantConfig:
+    CodekitDynamoDB: # Variant for the Codekit
+      BillingMode:     'PROVISIONED'
+
+      DevicesReadMinCU:    '130000'
+      DevicesReadMaxCU:    '130000'
+      DevicesWriteMinCU:   '25'
+      DevicesWriteMaxCU:   '25'
+
+      AudiencesReadMinCU:  '2000'
+      AudiencesReadMaxCU:  '2000'
+      AudiencesWriteMinCU: '25'
+      AudiencesWriteMaxCU: '25'
+
+      CampaignsReadMinCU:  '2000'
+      CampaignsReadMaxCU:  '2000'
+      CampaignsWriteMinCU: '25'
+      CampaignsWriteMaxCU: '25'
+
+      BudgetsReadMinCU: '2000'
+      BudgetsReadMaxCU: '2000'
+      BudgetsWriteMinCU: '25'
+      BudgetsWriteMaxCU: '25'
+
+      TargetUtilization:   '80'
+      ScaleInCooldown:     '600'
+      ScaleOutCooldown:    '60'
+
+    Basic: # Variant for development and basic tests with autoscaling enabled
+      BillingMode:     'PROVISIONED'
+
+      DevicesReadMinCU:    '25'
+      DevicesReadMaxCU:    '25'
+      DevicesWriteMinCU:   '25'
+      DevicesWriteMaxCU:   '25'
+
+      AudiencesReadMinCU:  '25'
+      AudiencesReadMaxCU:  '25'
+      AudiencesWriteMinCU: '25'
+      AudiencesWriteMaxCU: '25'
+
+      CampaignsReadMinCU:  '25'
+      CampaignsReadMaxCU:  '25'
+      CampaignsWriteMinCU: '25'
+      CampaignsWriteMaxCU: '25'
+
+      BudgetsReadMinCU: '25'
+      BudgetsReadMaxCU: '25'
+      BudgetsWriteMinCU: '25'
+      BudgetsWriteMaxCU: '25'
+
+      TargetUtilization:   '80'
+      ScaleInCooldown:     '600'
+      ScaleOutCooldown:    '60'
+
+    BenchmarkDynamoDB: # Variant used for benchmarking the HTTP server with DynamoDB
+      BillingMode:     'PROVISIONED'
+
+      DevicesReadMinCU:    '40000'
+      DevicesReadMaxCU:    '40000'
+      DevicesWriteMinCU:   '25'
+      DevicesWriteMaxCU:   '25'
+
+      AudiencesReadMinCU:  '5000'
+      AudiencesReadMaxCU:  '5000'
+      AudiencesWriteMinCU: '25'
+      AudiencesWriteMaxCU: '25'
+
+      CampaignsReadMinCU:  '5000'
+      CampaignsReadMaxCU:  '5000'
+      CampaignsWriteMinCU: '25'
+      CampaignsWriteMaxCU: '25'
+
+      BudgetsReadMinCU: '100000'
+      BudgetsReadMaxCU: '100000'
+      BudgetsWriteMinCU: '25'
+      BudgetsWriteMaxCU: '25'
+
+      TargetUtilization:   '80'
+      ScaleInCooldown:     '600'
+      ScaleOutCooldown:    '60'
+
+    BenchmarkAutoscale: # Autoscaled variant used for benchmarking
+      BillingMode:     'PROVISIONED'
+
+      DevicesReadMinCU:    '40000'
+      DevicesReadMaxCU:    '120000'
+      DevicesWriteMinCU:   '25'
+      DevicesWriteMaxCU:   '25'
+
+      AudiencesReadMinCU:  '5000'
+      AudiencesReadMaxCU:  '20000'
+      AudiencesWriteMinCU: '25'
+      AudiencesWriteMaxCU: '25'
+
+      CampaignsReadMinCU:  '5000'
+      CampaignsReadMaxCU:  '20000'
+      CampaignsWriteMinCU: '25'
+      CampaignsWriteMaxCU: '25'
+
+      BudgetsReadMinCU: '100000'
+      BudgetsReadMaxCU: '400000'
+      BudgetsWriteMinCU: '25'
+      BudgetsWriteMaxCU: '25'
+
+      TargetUtilization:   '80'
+      ScaleInCooldown:     '600'
+      ScaleOutCooldown:    '60'
+
+Conditions:
+  Provisioned: !Equals
+    - !FindInMap [ VariantConfig, !Ref Variant, BillingMode ]
+    - PROVISIONED
+
+Resources:
+  DeviceAudiencesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+
+    Properties:
+      TableName: !Sub '${TableNamePrefix}dev'
+      BillingMode: !FindInMap [ VariantConfig, !Ref Variant, BillingMode ]
+
+      SSESpecification:
+        SSEType: KMS
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref DynamoDBTableEncryptionKey
+
+      KeySchema:
+        - AttributeName: "d"
+          KeyType: "HASH"
+
+      AttributeDefinitions:
+        - AttributeName: "d"
+          AttributeType: "B"
+
+      ProvisionedThroughput: !If
+        - Provisioned
+        - ReadCapacityUnits:  !FindInMap [ VariantConfig, !Ref Variant, DevicesReadMinCU ]
+          WriteCapacityUnits: !FindInMap [ VariantConfig, !Ref Variant, DevicesWriteMinCU ]
+        - !Ref AWS::NoValue
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W78
+            reason: The bidder project doesn't need Point-In-Time Recovery because it uses the tables to store only test data.
+          - id: W73
+            reason: The billing mode is set based on the VariantConfig.
+          - id: W28
+            reason: The name has to be explicit because of the application settings.
+
+  AudienceCampaignsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+
+    Properties:
+      TableName: !Sub '${TableNamePrefix}audience_campaigns'
+      BillingMode: !FindInMap [ VariantConfig, !Ref Variant, BillingMode ]
+
+      SSESpecification:
+        SSEType: KMS
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref DynamoDBTableEncryptionKey
+      KeySchema:
+        - AttributeName: "audience_id"
+          KeyType: "HASH"
+
+      AttributeDefinitions:
+        - AttributeName: "audience_id"
+          AttributeType: "B"
+
+      ProvisionedThroughput: !If
+        - Provisioned
+        - ReadCapacityUnits:  !FindInMap [ VariantConfig, !Ref Variant, AudiencesReadMinCU ]
+          WriteCapacityUnits: !FindInMap [ VariantConfig, !Ref Variant, AudiencesWriteMinCU ]
+        - !Ref AWS::NoValue
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W78
+            reason: The bidder project doesn't need Point-In-Time Recovery because it uses the tables to store only test data.
+          - id: W73
+            reason: The billing mode is set based on the VariantConfig.
+          - id: W28
+            reason: The name has to be explicit because of the application settings.
+
+  CampaignBudgetTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+
+    Properties:
+      TableName: !Sub '${TableNamePrefix}campaign_budget'
+      BillingMode: !FindInMap [ VariantConfig, !Ref Variant, BillingMode ]
+
+      SSESpecification:
+        SSEType: KMS
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref DynamoDBTableEncryptionKey
+
+      KeySchema:
+        - AttributeName: "campaign_id"
+          KeyType: "HASH"
+
+      AttributeDefinitions:
+        - AttributeName: "campaign_id"
+          AttributeType: "B"
+
+      ProvisionedThroughput: !If
+        - Provisioned
+        - ReadCapacityUnits:  !FindInMap [ VariantConfig, !Ref Variant, CampaignsReadMinCU ]
+          WriteCapacityUnits: !FindInMap [ VariantConfig, !Ref Variant, CampaignsWriteMinCU ]
+        - !Ref AWS::NoValue
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W78
+            reason: The bidder project doesn't need Point-In-Time Recovery because it uses the tables to store only test data.
+          - id: W73
+            reason: The billing mode is set based on the VariantConfig.
+          - id: W28
+            reason: The name has to be explicit because of the application settings.
+
+  BudgetTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+
+    Properties:
+      TableName: !Sub '${TableNamePrefix}budget'
+      BillingMode: !FindInMap [ VariantConfig, !Ref Variant, BillingMode ]
+      SSESpecification:
+        SSEType: KMS
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref DynamoDBTableEncryptionKey
+
+      KeySchema:
+        - AttributeName: "i"
+          KeyType: "HASH"
+
+      AttributeDefinitions:
+        - AttributeName: "i"
+          AttributeType: "N"
+
+      ProvisionedThroughput: !If
+        - Provisioned
+        - ReadCapacityUnits: !FindInMap [ VariantConfig, !Ref Variant, BudgetsReadMinCU ]
+          WriteCapacityUnits: !FindInMap [ VariantConfig, !Ref Variant, BudgetsWriteMinCU ]
+        - !Ref AWS::NoValue
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W78
+            reason: The bidder project doesn't need Point-In-Time Recovery because it uses the tables to store only test data.
+          - id: W73
+            reason: The billing mode is set based on the VariantConfig.
+          - id: W28
+            reason: The name has to be explicit because of the application settings.
+
+  DevicesAutoScaling:
+    Type: AWS::CloudFormation::Stack
+    Condition: Provisioned
+    DependsOn: DeviceAudiencesTable
+
+    Properties:
+      TemplateURL: ./templates/dynamodb-table-autoscaling.yaml
+      Parameters:
+        TableName:              !Ref DeviceAudiencesTable
+        ReadMinCapacity:        !FindInMap [ VariantConfig, !Ref Variant, DevicesReadMinCU ]
+        ReadMaxCapacity:        !FindInMap [ VariantConfig, !Ref Variant, DevicesReadMaxCU ]
+        WriteMinCapacity:       !FindInMap [ VariantConfig, !Ref Variant, DevicesWriteMinCU ]
+        WriteMaxCapacity:       !FindInMap [ VariantConfig, !Ref Variant, DevicesWriteMaxCU ]
+        ReadTargetUtilization:  !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        ReadScaleInCooldown:    !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        ReadScaleOutCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+        WriteTargetUtilization: !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        WriteScaleInCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        WriteScaleOutCooldown:  !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+
+  AudiencesAutoScaling:
+    Type: AWS::CloudFormation::Stack
+    Condition: Provisioned
+    DependsOn: AudienceCampaignsTable
+
+    Properties:
+      TemplateURL: ./templates/dynamodb-table-autoscaling.yaml
+      Parameters:
+        TableName:              !Ref AudienceCampaignsTable
+        ReadMinCapacity:        !FindInMap [ VariantConfig, !Ref Variant, AudiencesReadMinCU ]
+        ReadMaxCapacity:        !FindInMap [ VariantConfig, !Ref Variant, AudiencesReadMaxCU ]
+        WriteMinCapacity:       !FindInMap [ VariantConfig, !Ref Variant, AudiencesWriteMinCU ]
+        WriteMaxCapacity:       !FindInMap [ VariantConfig, !Ref Variant, AudiencesWriteMaxCU ]
+        ReadTargetUtilization:  !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        ReadScaleInCooldown:    !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        ReadScaleOutCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+        WriteTargetUtilization: !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        WriteScaleInCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        WriteScaleOutCooldown:  !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+
+  CampaignsAutoScaling:
+    Type: AWS::CloudFormation::Stack
+    Condition: Provisioned
+    DependsOn: CampaignBudgetTable
+
+    Properties:
+      TemplateURL: ./templates/dynamodb-table-autoscaling.yaml
+      Parameters:
+        TableName:              !Ref CampaignBudgetTable
+        ReadMinCapacity:        !FindInMap [ VariantConfig, !Ref Variant, CampaignsReadMinCU ]
+        ReadMaxCapacity:        !FindInMap [ VariantConfig, !Ref Variant, CampaignsReadMaxCU ]
+        WriteMinCapacity:       !FindInMap [ VariantConfig, !Ref Variant, CampaignsWriteMinCU ]
+        WriteMaxCapacity:       !FindInMap [ VariantConfig, !Ref Variant, CampaignsWriteMaxCU ]
+        ReadTargetUtilization:  !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        ReadScaleInCooldown:    !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        ReadScaleOutCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+        WriteTargetUtilization: !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        WriteScaleInCooldown:   !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        WriteScaleOutCooldown:  !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+
+  BudgetsAutoScaling:
+    Type: AWS::CloudFormation::Stack
+    Condition: Provisioned
+    DependsOn: BudgetTable
+
+    Properties:
+      TemplateURL: ./templates/dynamodb-table-autoscaling.yaml
+      Parameters:
+        TableName: !Ref BudgetTable
+        ReadMinCapacity: !FindInMap [ VariantConfig, !Ref Variant, BudgetsReadMinCU ]
+        ReadMaxCapacity: !FindInMap [ VariantConfig, !Ref Variant, BudgetsReadMaxCU ]
+        WriteMinCapacity: !FindInMap [ VariantConfig, !Ref Variant, BudgetsWriteMinCU ]
+        WriteMaxCapacity: !FindInMap [ VariantConfig, !Ref Variant, BudgetsWriteMaxCU ]
+        ReadTargetUtilization: !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        ReadScaleInCooldown: !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        ReadScaleOutCooldown: !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+        WriteTargetUtilization: !FindInMap [ VariantConfig, !Ref Variant, TargetUtilization ]
+        WriteScaleInCooldown: !FindInMap [ VariantConfig, !Ref Variant, ScaleInCooldown ]
+        WriteScaleOutCooldown: !FindInMap [ VariantConfig, !Ref Variant, ScaleOutCooldown ]
+
+  DynamoDBTableEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: true
+      Description: "Encryption key for Dynamodb tables"
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              Service: "codebuild.amazonaws.com"
+            Resource: '*'
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:Describe*'
+              - 'kms:Create*'
+              - 'kms:Enable*'
+              - 'kms:List*'
+              - 'kms:Put*'
+              - 'kms:Revoke*'
+              - 'kms:Update*'
+              - 'kms:Disable*'
+              - 'kms:Get*'
+              - 'kms:Delete*'
+              - 'kms:ScheduleKeyDeletion'
+              - 'kms:CancelKeyDeletion'
+            Condition:
+              StringEquals:
+                'kms:CallerAccount': !Ref 'AWS::AccountId'
+          - Effect: Allow
+            Principal:
+              AWS:
+              - !Ref EksAccessRoleARN
+              - !Ref EksWorkerRoleARN
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+            Resource: '*'

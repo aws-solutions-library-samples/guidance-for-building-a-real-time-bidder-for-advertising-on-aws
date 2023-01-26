@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-devices-aerospike-${NAME}
+spec:
+  template:
+    metadata:
+      labels:
+        app: datagen
+    spec:
+      nodeSelector:
+        pool: benchmark
+      restartPolicy: OnFailure
+      containers:
+        - image: ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_PREFIX}datagen:latest
+          name: generate-devices
+          imagePullPolicy: Always
+          args:
+            - -output=aerospike
+            - -aerospike-namespace=bidder
+            - -type=devices
+            - -low=${LOW}
+            - -high=${HIGH}
+            - -concurrency=${DATAGEN_CONCURRENCY}
+            - -aerospike-host=aerospike-aerospike
+          env:
+            - name: AWS_REGION
+              value: ${AWS_REGION}

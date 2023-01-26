@@ -1,0 +1,38 @@
+---
+# Use a k8s load balancer, not AWS.
+service:
+  type: LoadBalancer
+  port: 8090
+  targetPort: 8090
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: null
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: null
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: null
+    service.beta.kubernetes.io/aws-load-balancer-type: null
+    service.beta.kubernetes.io/aws-load-balancer-internal: null
+
+# Not many nodes to choose in minikube.
+nodeSelector:
+  pool: null
+
+config:
+  DYNAMODB_DEVICE_TABLE: "tiny-device"
+  DYNAMODB_AUDIENCE_TABLE: "tiny-audience"
+  DYNAMODB_CAMPAIGN_TABLE: "tiny-campaign"
+  DYNAMODB_BUDGET_TABLE: "tiny-budget"
+  # Must be higher than the 100ms if running outside AWS.
+  BIDREQUEST_TIMEOUT: "10s"
+  AEROSPIKE_BUDGET_GET_TIMEOUT: "20s"
+
+# Disable to not need a Prometheus installation.
+serviceMonitor:
+  enabled: false
+
+# First build the image locally and push into minikube cache:
+#
+#     make bidder@build BIDDER_IMAGE_VERSION=XXX
+#     minikube image load ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/bidder:XXX
+#
+# for a unique image tag XXX.
+image:
+  pullPolicy: IfNotPresent

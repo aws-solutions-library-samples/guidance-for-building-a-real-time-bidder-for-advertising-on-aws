@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: $PVC_NAME
+  labels:
+    app: $APP_NAME
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: csi-aws-ebs
+  resources:
+    requests:
+      storage: ${SNAPSHOT_SIZE}Gi
+  dataSource:
+    name: $SNAPSHOT_NAME
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io

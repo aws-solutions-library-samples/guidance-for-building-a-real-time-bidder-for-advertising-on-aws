@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "report-aggregator.fullname" . }}
+  labels:
+    {{- include "report-aggregator.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 10
+  parallelism: 1
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "report-aggregator.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "report-aggregator.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ include "report-aggregator.imagePullPolicy" . }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion }}
+          args:
+            - --namespace=default
+            - --job=load-generator
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}

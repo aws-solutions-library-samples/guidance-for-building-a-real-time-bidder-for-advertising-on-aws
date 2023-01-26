@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-devices-${NAME}
+spec:
+  template:
+    metadata:
+      labels:
+        app: generate-devices
+    spec:
+      nodeSelector:
+        pool: basic-arm
+      restartPolicy: Never
+      containers:
+        - image: ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_PREFIX}datagen:latest
+          name: generate-devices
+          imagePullPolicy: Always
+          args:
+            - -output=dynamodb
+            - -type=devices
+            - -table=${DYNAMODB_TABLENAME_PREFIX}dev
+            - -low=${LOW}
+            - -high=${HIGH}
+            - -concurrency=${DATAGEN_CONCURRENCY}
+          env:
+            - name: AWS_REGION
+              value: ${AWS_REGION}

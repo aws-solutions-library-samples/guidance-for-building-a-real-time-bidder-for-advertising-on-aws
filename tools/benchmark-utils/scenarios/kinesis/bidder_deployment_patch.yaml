@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidder
+spec:
+  replicas: 32
+  template:
+    spec:
+      nodeSelector:
+        pool: application
+      containers:
+        - name: bidder
+          image: ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/bidder:AB-194-kinesis-zstd-v1
+          resources:
+            limits:
+              cpu: 1950m

@@ -1,0 +1,15 @@
+; -*- mode: conf-windows -*-
+
+[MESSAGES]
+; Enable messages disabled by default.
+enable=all
+; redefined-outer-name normally occurs with pytest fixtures used in the module where they are defined.
+; unused-argument is caused by pytest fixtures used for side-effects
+; too-many-arguments is common with pytest fixtures
+disable=redefined-outer-name,unused-argument,locally-disabled,suppressed-message,too-many-arguments
+
+[BASIC]
+good-names = i,j,k,ex,Run,_,logger,T,ad,db,id,pytestmark,rf,pytest_plugins,router,pk
+extension-pkg-allow-list = aerospike
+
+max-line-length = 100

@@ -1,0 +1,148 @@
+# Default values for bidder.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+stackName: model
+awsRegion: us-east-1
+
+replicaCount: 1
+
+# These are bidder environment variables. Some are commented out and have proper defaults depending on other settings
+# if not provided explicitly.
+config:
+  # Default set from resources.limits.cpu or missing if no limit is
+  # specified. (Set to zero for Go's default of using all available CPUs.)
+  # GOMAXPROCS: "0"
+  LOG_LEVEL: "info"
+
+  # HTTP Server
+  SERVER_ADDRESS: ":8094"
+  SERVER_MODELREQUEST_PATH: "/v2/models/ctr-lgbm/versions/v0.1.0/infer" #"/modelrequest"
+  SERVER_HEALTHCHECK_PATH: "/v2/health/live" #"/healthz"
+
+  SERVER_READ_TIMEOUT: "100ms"
+  SERVER_WRITE_TIMEOUT: "100ms"
+  SERVER_IDLE_TIMEOUT: "120s"
+
+  SERVER_LOG_ALL_FASTHTTP_ERRORS: "true"
+
+  MODELREQUEST_TIMEOUT: "100ms"
+  MODELREQUEST_TIMEOUT_STATUS: "504"
+
+  # Internal HTTP Server
+  DIAGNOSTIC_SERVER_ADDRESS: ":8095"
+  DIAGNOSTIC_SERVER_METRICS_PATH: "/metrics"
+  DIAGNOSTIC_SERVER_PROFILER_PATH: "/debug/pprof"
+  DIAGNOSTIC_SERVER_TRACE_PATH: "/debug/trace"
+  DIAGNOSTIC_SERVER_SHUTDOWN_TIMEOUT: "2s"
+
+  # AWS region of used services: defaults to the awsRegion setting
+  # AWS_REGION: "us-east-1"
+
+image:
+  # Set this to ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+  registry: ""
+  # Repository within the ECR registry.
+  repository: model
+  # Pull policy is determine in the following way: 1) if specified here, the value is used; 2) if the tag is 'latest',
+  # the pull policy is Always (since the latest tag changes), 3) otherwise IfNotPresent is used (since the tag likely
+  # corresponds to a git commit hash or a git tag that does not change in our repo).
+  # pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+serviceInternalHttp:
+  type: ClusterIP
+  port: 8094
+  targetPort: 8094
+
+  # Number of services to create. Useful to create multiple load balancers.
+  count: 1
+
+  annotations:
+    # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    # service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+    # Internal load balancer:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+serviceInternal:
+  type: ClusterIP
+  port: 8095
+  targetPort: 8095
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+hpa:
+  # Use Horizontal Pod Autoscaler
+  enabled: false
+
+  replicas:
+    min: 1
+    max: 120
+
+  metrics: []
+#   # Example: autoscale using CPU utilization
+#   # Remember to specify resource requests
+#    - type: Resource
+#        resource:
+#          name: cpu
+#          target:
+#            type: Utilization
+#            averageUtilization: 70
+
+#   # Example: autoscale using average RPS per pod
+#    - type: Pods
+#      pods:
+#        metric:
+#          # Average requests per second from last 2 minutes
+#          # Defined in section rules.custom of deployment/infrastructure/deployment/prometheus/adapter-values.yaml
+#          name: bidder_bid_request_received_number_rate
+#        target:
+#          type: AverageValue
+#          averageValue: 2940 # 70% of 4200 RPS
+
+nodeSelector:
+  pool: basic-arm
+
+tolerations: []
+
+affinity: {}
+
+serviceMonitor:
+  enabled: true

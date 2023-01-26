@@ -1,0 +1,28 @@
+version: 0.2
+
+
+env:
+  variables:
+    CODEBUILD_BUILD_IMAGE: 'aws/codebuild/standard:5.0' #aws/codebuild/amazonlinux2-aarch64-standard:5.0
+
+phases:
+  install:
+    commands:
+    # helm version needs to be 3.8.2 to be compatible with eks k8s version
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      - chmod 700 get_helm.sh && ./get_helm.sh --version v3.8.2
+      - echo "installed helm"
+  build:
+    commands:
+      - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - echo "Starting build `date` in `pwd`"
+      - chmod +x ./initialize-repo.sh && ./initialize-repo.sh ${AWS_ACCOUNT_ID} ${AWS_REGION} ${RTBKIT_ROOT_STACK_NAME} ${RTBKIT_VARIANT} yes yes
+      - echo "Build completed `date`"
+  post_build:
+    commands:
+      - aws eks update-cluster-config --region ${AWS_REGION} --name ${RTBKIT_ROOT_STACK_NAME} --logging '{"clusterLogging":[{"types":["api","audit","authenticator","controllerManager","scheduler"],"enabled":true}]}'
+      - echo "Post build completed on `date`"
+
+artifacts:
+  files:
+      - buildspec.yml   

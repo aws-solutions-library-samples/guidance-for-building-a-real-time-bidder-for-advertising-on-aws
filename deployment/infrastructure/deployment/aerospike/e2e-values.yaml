@@ -1,0 +1,8 @@
+---
+# Configuration for a small in-memory cluster for e2e tests.
+aerospikeNamespace: bidder
+aerospikeNamespaceMemoryGB: 1
+aerospikeReplicationFactor: 1
+
+persistenceStorage: {}
+volumes: {}

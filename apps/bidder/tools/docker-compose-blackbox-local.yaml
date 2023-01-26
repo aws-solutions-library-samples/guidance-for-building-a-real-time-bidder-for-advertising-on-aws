@@ -1,0 +1,29 @@
+# Override for using locally built images.
+
+version: "3.4"
+
+services:
+
+  blackbox-tests:
+    image: "blackbox"
+    build:
+      context: ./apps/bidder
+      dockerfile: ./tools/Dockerfile.blackbox
+      args:
+        REGISTRY: ${REGISTRY}
+
+  bidder:
+    image: "bidder"
+    build:
+      context: ./apps/bidder
+      dockerfile: ./tools/Dockerfile.bidder
+      args:
+        REGISTRY: ${REGISTRY}
+
+  datagen:
+    image: datagen
+    build:
+      context: ./tools/datagen
+      dockerfile: ./Dockerfile
+      args:
+        REGISTRY: ${REGISTRY}

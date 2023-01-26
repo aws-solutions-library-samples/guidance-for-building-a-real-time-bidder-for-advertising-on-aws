@@ -1,0 +1,18 @@
+replicaCount: 11
+
+useBenchmarkKinesis: true
+
+config:
+  KINESIS_DISABLE: "false"
+
+  DYNAMODB_ENDPOINT: "https://dynamodb.us-east-1.amazonaws.com."
+  DYNAMODB_MAX_RETRIES: "-1"
+  DYNAMODB_ENABLE_LOW_LEVEL: "false"
+  DYNAMODB_DEVICE_TABLE: "dev"
+  DYNAMODB_AUDIENCE_TABLE: "audience_campaigns"
+  DYNAMODB_CAMPAIGN_TABLE: "campaign_budget"
+  DYNAMODB_BUDGET_TABLE: "budget"
+
+  DAX_ENABLED: "false"
+
+  BUDGET_SYNC_DISABLE: "false"

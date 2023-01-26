@@ -1,0 +1,15 @@
+---
+replicaCount: 1
+nodeSelector:
+  pool: application
+
+# 64-threaded Bidder was tested in burstable QoS mode only. Benchmarks of previous,
+# low-threaded Bidder versions showed a performance increase in guaranteed QoS mode,
+# so it may be appropriate to test 64-threaded Bidder in guaranteed mode as well.
+resources: {}
+
+config:
+  # Bidder should have all 64 CPU cores available, but use only 60 for goroutines.
+  # 4 remaining cores are to be used by the runtime. Allocating all 64 cores for
+  # goroutines decreases Bidder performance.
+  GOMAXPROCS: "60"

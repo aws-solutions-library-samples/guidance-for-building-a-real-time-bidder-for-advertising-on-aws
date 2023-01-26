@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+# Workaround Aerospike assuming that everything that isn't PowerPC is x86: if running on ARM64, replace -march=nocona
+# by -march=armv8.2-a so it builds on Graviton2 and QEMU.
+
+case $(uname -m) in
+    aarch64) MARCH=-march=armv8.2-a ;;
+    *) MARCH=-march=nocona ;;
+esac
+
+args=()
+
+for arg in "$@"; do
+    case "$arg" in
+        -march=nocona) args+=("$MARCH") ;;
+        *) args+=("$arg") ;;
+    esac
+done
+
+exec /usr/bin/gcc "${args[@]}"

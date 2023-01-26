@@ -1,0 +1,29 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+
+metadata:
+  name: {{ include "e2e.fullname" . }}
+
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - configmaps
+      - deployments
+      - deployments/scale
+      - jobs
+      - pods
+      - pods/log
+      - pods/portforward
+      - secrets
+      - serviceaccounts
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - watch
+      - update

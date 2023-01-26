@@ -1,0 +1,4 @@
+config:
+  KINESIS_DISABLE: "true"
+  DAX_ENABLE: "true"
+  BUDGET_SYNC_DISABLE: "true"

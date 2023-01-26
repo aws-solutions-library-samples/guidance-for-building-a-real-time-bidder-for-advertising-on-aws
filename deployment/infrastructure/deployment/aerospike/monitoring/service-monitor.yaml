@@ -1,0 +1,10 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aerospike
+spec:
+  selector:
+    matchLabels:
+      app: aerospike
+  endpoints:
+    - targetPort: exporter

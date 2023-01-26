@@ -1,0 +1,57 @@
+# Default values for report-aggregator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Job parameters.
+awsRegion: us-east-1
+
+image:
+  # Set this to ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+  registry: ""
+  # Repository within the ECR registry.
+  repository: report-aggregator
+  # Pull policy is determine in the following way: 1) if specified here, the value is used; 2) if the tag is 'latest',
+  # the pull policy is Always (since the latest tag changes), 3) otherwise IfNotPresent is used (since the tag likely
+  # corresponds to a git commit hash or a git tag that does not change in our repo).
+  # pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 3000 # to be able to read Kubernetes and AWS token files
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector:
+  pool: basic-arm

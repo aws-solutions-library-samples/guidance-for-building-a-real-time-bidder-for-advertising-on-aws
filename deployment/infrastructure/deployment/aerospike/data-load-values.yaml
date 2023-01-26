@@ -1,0 +1,16 @@
+# Configuration for data load and snapshot
+# extends values.yaml
+
+nodeSelector:
+  pool: aerospike
+
+aerospikeNamespaceMemoryGB: 750
+
+persistenceStorage:
+  - name: data
+    enabled: true
+    mountPath: /data
+    size: 750Gi
+    volumeMode: Filesystem
+    accessMode: ReadWriteOnce
+    storageClass: csi-aws-ebs

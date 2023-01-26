@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidder
+spec:
+  replicas: ${replicas}
+  template:
+    spec:
+      nodeSelector:
+        pool: application
+      containers:
+        - name: bidder
+          image: ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/bidder:379e3c0111e7adc452efe22dd675d1cfad5325c1
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 1950m

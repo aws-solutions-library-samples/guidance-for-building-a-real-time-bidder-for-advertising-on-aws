@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: load-generator
+spec:
+  ttlSecondsAfterFinished: 10
+  parallelism: 60
+  template:
+    metadata:
+      labels:
+        app: load-generator
+    spec:
+      nodeSelector:
+        pool: benchmark
+      serviceAccountName: load-generator-sa
+      restartPolicy: Never
+      containers:
+        - name: load-generator
+          image: ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/load-generator:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 2
+            limits:
+              cpu: 2
+          env:
+            - name: AWS_REGION
+              value: us-east-1
+          args:
+            - --target=${target}
+            - --duration=${duration}
+            - --rate=${rate}
+            - --devices-used=1000000000
+            - --workers=16
+            - --max-workers=64
+            - --profiler-url=http://bidder-internal:8091/debug/pprof/
+            - --profiler-bucket=aws-bidder-benchmark-files
+            - --profiler-output=${profiler_output}
+      securityContext:
+        fsGroup: 3000 # to be able to read Kubernetes and AWS token files

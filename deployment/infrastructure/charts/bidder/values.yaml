@@ -1,0 +1,232 @@
+# Default values for bidder.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+stackName: bidder
+awsRegion: us-east-1
+# Override to use the optional more capable Kinesis stream if it's deployed.
+useBenchmarkKinesis: true
+
+replicaCount: 10
+
+# These are bidder environment variables. Some are commented out and have proper defaults depending on other settings
+# if not provided explicitly.
+config:
+  # Default set from resources.limits.cpu or missing if no limit is
+  # specified. (Set to zero for Go's default of using all available CPUs.)
+  # GOMAXPROCS: "0"
+  LOG_LEVEL: "info"
+
+  # HTTP Server
+  SERVER_ADDRESS: ":8090"
+  SERVER_BIDREQUEST_PATH: "/bidrequest"
+  SERVER_HEALTHCHECK_PATH: "/healthz"
+
+  SERVER_READ_TIMEOUT: "100ms"
+  SERVER_WRITE_TIMEOUT: "100ms"
+  SERVER_IDLE_TIMEOUT: "120s"
+
+  SERVER_LOG_ALL_FASTHTTP_ERRORS: "true"
+
+  BIDREQUEST_TIMEOUT: "100ms"
+  BIDREQUEST_TIMEOUT_STATUS: "504"
+
+  # Internal HTTP Server
+  DIAGNOSTIC_SERVER_ADDRESS: ":8091"
+  DIAGNOSTIC_SERVER_METRICS_PATH: "/metrics"
+  DIAGNOSTIC_SERVER_PROFILER_PATH: "/debug/pprof"
+  DIAGNOSTIC_SERVER_TRACE_PATH: "/debug/trace"
+  DIAGNOSTIC_SERVER_SHUTDOWN_TIMEOUT: "2s"
+
+  # AWS region of used services: defaults to the awsRegion setting
+  # AWS_REGION: "us-east-1"
+
+  # Kinesis
+  KINESIS_ENDPOINT: ""
+  # Kinesis stream; defaults to to the per stack one: either the single shard one or the larger one if
+  # useBenchmarkKinesis is true.
+  # KINESIS_STREAM_NAME: "bidder-bids"
+  KINESIS_OPERATION_TIMEOUT: "30s"
+  KINESIS_DISABLE: "false"
+  KINESIS_LOG_LEVEL: "0"
+  KINESIS_MAX_CONNECTIONS: "64"
+  KINESIS_FLUSH_INTERVAL: "5s"
+
+  # Sets which database implementation should be used. "dynamodb" and "aerospike" are current possible values.
+  DATABASE_CLIENT: "dynamodb"
+
+  # DynamoDB
+  # FQDN endpoint to reduce the number of DNS queries, <https://github.com/aws/aws-sdk-go/issues/1380>.
+  DYNAMODB_ENDPOINT: "https://dynamodb.us-east-1.amazonaws.com."
+  DYNAMODB_OPERATION_TIMEOUT: "50s"
+  DYNAMODB_SCAN_WORKERS: "1"
+  DYNAMODB_DISABLE_SSL: "false"
+  DYNAMODB_LOG_LEVEL: "0"
+  DYNAMODB_DISABLE_PARAM_VALIDATION: "false"
+  DYNAMODB_DISABLE_COMPUTE_CHECKSUMS: "false"
+  DYNAMODB_MAX_RETRIES: "-1"
+  DYNAMODB_SCAN_MAX_RETRIES: "10"
+  DYNAMODB_MAX_IDLE_CONNS_PER_HOST: "100"
+  DYNAMODB_SLOW_LOG_DURATION: "100ms"
+  DYNAMODB_ENABLE_LOW_LEVEL: "true"
+  DYNAMODB_DEVICE_TABLE: "dev"
+  DYNAMODB_AUDIENCE_TABLE: "audience_campaigns"
+  DYNAMODB_CAMPAIGN_TABLE: "campaign_budget"
+  DYNAMODB_BUDGET_TABLE: "budget"
+
+  DYNAMODB_LOW_LEVEL_MAX_CONNECTIONS: "1024"
+
+  # DAX
+  DAX_ENABLE: "false"
+  # endpoint: default uses the stack name and region settings
+  DAX_REQUEST_TIMEOUT: "100ms"
+  DAX_READ_RETRIES: "2"
+  DAX_LOG_LEVEL: "0"
+
+  # Aerospike
+  # Host of the Aerospike cluster.
+  AEROSPIKE_HOST: "aerospike-aerospike"
+  # Port of the Aerospike cluster.
+  AEROSPIKE_PORT: "3000"
+  # Namespace to use by bidder.
+  AEROSPIKE_NAMESPACE: "bidder"
+  # Allows to fill the connection pool with connections for all nodes.
+  AEROSPIKE_WARM_UP_COUNT: "0"
+  # Specifies transaction total timeout for all scans. 0 for no timeout.
+  AEROSPIKE_SCAN_TOTAL_TIMEOUT: "0"
+  # Determines the maximum number of retries before aborting the current transaction.
+  AEROSPIKE_SCAN_MAX_RETRIES: "2"
+  # Priority of request relative to other transactions. 1 = low, 2 = medium, 3 = high. 1 is default.
+  AEROSPIKE_SCAN_PRIORITY: "1"
+  # ConcurrentNodes determines how to issue scan requests (in parallel or sequentially).
+  AEROSPIKE_SCAN_CONCURRENT_NODES: "true"
+  # Determines the duration to sleep between scan retries. If set to 0, there is no sleep.
+  AEROSPIKE_SCAN_SLEEP_BETWEEN_RETRIES: "1s"
+  # Specifies the multiplying factor to be used for exponential backoff during retries.
+  # Default value 1.5, must always by > 1
+  AEROSPIKE_SCAN_SLEEP_MULTIPLIER: "1.5"
+  # Determines the maximum number of retries before aborting the current transaction.
+  AEROSPIKE_GET_MAX_RETRIES: "2"
+  # Priority of request relative to other transactions. 1 = low, 2 = medium, 3 = high. 3 is default.
+  AEROSPIKE_GET_PRIORITY: "3"
+  # Log level for Aerospike client (https://www.aerospike.com/docs/client/go/usage/logging.html)
+  AEROSPIKE_CLIENT_LOG_LEVEL: "OFF"
+  # Boolean flag whether use scan or get operation to retrive budgets
+  AEROSPIKE_DISABLE_SCAN: "false"
+  # Timeout of fetching the budgets when the budget repository uses the GET operation.
+  AEROSPIKE_BUDGET_GET_TIMEOUT: "20s"
+
+  # Cache
+  BUDGET_SYNC_PERIOD_SECONDS: "2s"
+  BUDGET_SYNC_DISABLE: "false"
+  DEVICE_QUERY_DISABLE: "false"
+  MOCK_DEVICE_QUERY_DELAY: "5ms"
+  MOCK_DEVICE_NO_BID_FRACTION: "0"
+
+image:
+  # Set this to ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+  registry: ""
+  # Repository within the ECR registry.
+  repository: bidder
+  # Pull policy is determine in the following way: 1) if specified here, the value is used; 2) if the tag is 'latest',
+  # the pull policy is Always (since the latest tag changes), 3) otherwise IfNotPresent is used (since the tag likely
+  # corresponds to a git commit hash or a git tag that does not change in our repo).
+  # pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8090
+
+  # Number of services to create. Useful to create multiple load balancers.
+  count: 1
+
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+    # Internal load balancer:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+
+serviceInternal:
+  type: ClusterIP
+  port: 8091
+  targetPort: 8091
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+hpa:
+  # Use Horizontal Pod Autoscaler
+  enabled: false
+
+  replicas:
+    min: 1
+    max: 120
+
+  metrics: []
+#   # Example: autoscale using CPU utilization
+#   # Remember to specify resource requests
+#    - type: Resource
+#        resource:
+#          name: cpu
+#          target:
+#            type: Utilization
+#            averageUtilization: 70
+
+#   # Example: autoscale using average RPS per pod
+#    - type: Pods
+#      pods:
+#        metric:
+#          # Average requests per second from last 2 minutes
+#          # Defined in section rules.custom of deployment/infrastructure/deployment/prometheus/adapter-values.yaml
+#          name: bidder_bid_request_received_number_rate
+#        target:
+#          type: AverageValue
+#          averageValue: 2940 # 70% of 4200 RPS
+
+nodeSelector:
+  pool: application
+
+tolerations: []
+
+affinity: {}
+
+serviceMonitor:
+  enabled: true

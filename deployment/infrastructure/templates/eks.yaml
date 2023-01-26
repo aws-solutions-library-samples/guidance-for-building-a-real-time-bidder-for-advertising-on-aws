@@ -1,0 +1,387 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Cluster'
+
+Parameters:
+  EksClusterName:
+    Type: String
+    Description: Name of EKS cluster
+
+  EksClusterVersion:
+    Type: String
+    Description: Version of EKS cluster
+    Default: '1.21'
+
+  EksVpcId:
+    Type: String
+    Description: Id of VPC for EKS cluster
+
+  EksVpcNetworkBlock:
+    Type: String
+    Description: CIDR of VPC for EKS cluster
+
+  EksServiceRoleArn:
+    Type: String
+    Description: Arn of the node Service Role
+
+  EksWorkerRoleArn:
+    Type: String
+    Description: Arn of the node Worker Role
+
+  EksVpcSubnetIds:
+    Type: String
+    Description: List of VPC subnets for EKS cluster
+
+  NodeGroupReleaseVersion:
+    Type: String
+    Description: Release version of the Node group
+    Default: "1.21.2-20211003"
+
+  BasicArmNodeGroupSize:
+    Type: Number
+    Description: Number of nodes in basic ARM node group
+    Default: '2'
+
+  BasicArmInstanceType:
+    Type: CommaDelimitedList
+    Description: Instance type of basic ARM node group
+    Default: m6g.medium
+
+  BasicX86NodeGroupSize:
+    Type: Number
+    Description: Number of nodes in basic x86 node group
+    Default: '2'
+
+  BasicX86InstanceType:
+    Type: CommaDelimitedList
+    Description: Instance type of basic x86 node group
+    Default: t3.medium
+
+  ApplicationNodeGroupSizeMin:
+    Type: Number
+    Description: Minimum number of nodes in application node group
+    Default: '0'
+
+  ApplicationNodeGroupSizeMax:
+    Type: Number
+    Description: Maximum number of nodes in application node group
+    Default: '0'
+
+  ApplicationInstanceType:
+    Type: CommaDelimitedList
+    Description: Instance type of application node group
+    Default: m6g.16xlarge
+
+  ApplicationAmiType:
+    Type: String
+    Description: AMI type for application nodes
+    Default: AL2_ARM_64
+
+  ApplicationCapacityType:
+    Type: String
+    Description: Capacity type of application nodes
+    Default: ON_DEMAND
+
+  BenchmarkNodeGroupSizeMin:
+    Type: Number
+    Description: Minimum number of nodes in benchmark node group
+    Default: '0'
+
+  BenchmarkNodeGroupSizeMax:
+    Type: Number
+    Description: Maximum number of nodes in benchmark node group
+    Default: '0'
+
+  BenchmarkInstanceType:
+    Type: CommaDelimitedList
+    Description: Instance type of benchmark node group
+    Default: m6g.12xlarge
+
+  BenchmarkAmiType:
+    Type: String
+    Description: AMI type for benchmark nodes
+    Default: AL2_ARM_64
+
+  BenchmarkCapacityType:
+    Type: String
+    Description: Capacity type of benchmark nodes
+    Default: ON_DEMAND
+
+  AerospikeNodeGroupSize:
+    Type: Number
+    Description: Number of nodes in node group for Aerospike
+    Default: '0'
+
+  AerospikeInstanceType:
+    Type: CommaDelimitedList
+    Description: Instance type of node group for Aerospike
+    Default: r5dn.large
+
+  AerospikeAmiType:
+    Type: String
+    Description: AMI type for benchmark nodes
+    Default: AL2_x86_64
+
+  AerospikeCapacityType:
+    Type: String
+    Description: Capacity type of Aerospike nodes
+    Default: SPOT
+
+  StaticCPUManagerPolicy:
+    Type: Number
+    Description: Enable static CPU manager policy for Kubelet (cpuManagerPolicy="static")
+    Default: '0'
+
+  SingleAZ:
+    Type: Number
+    Description: Use only one AZ for node groups
+    Default: '0'
+
+Conditions:
+  CreateBasicArmNodeGroup: !Not [ !Equals [ !Ref BasicArmNodeGroupSize, 0 ] ]
+  CreateBasicx86NodeGroup: !Not [ !Equals [ !Ref BasicX86NodeGroupSize, 0 ] ]
+  CreateApplicationNodeGroup: !Not [ !Equals [ !Ref ApplicationNodeGroupSizeMax, 0 ] ]
+  CreateBenchmarkNodeGroup: !Not [ !Equals [ !Ref BenchmarkNodeGroupSizeMax, 0 ] ]
+  CreateAerospikeNodeGroup: !Not [ !Equals [ !Ref AerospikeNodeGroupSize, 0 ] ]
+  StaticCPUManagerPolicy: !Equals [ !Ref StaticCPUManagerPolicy, 1 ]
+  SingleAZ: !Equals [ !Ref SingleAZ, 1 ]
+
+Resources:
+  EKSClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId:
+         Ref: EksVpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref EksVpcNetworkBlock
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+  EksCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name:
+        !Ref EksClusterName
+      Version: !Ref EksClusterVersion
+      EncryptionConfig:
+        - Provider:
+            KeyArn: !GetAtt EksClusterEncryptionKey.Arn
+          Resources:
+            - secrets
+      RoleArn: !Ref EksServiceRoleArn
+      ResourcesVpcConfig:
+        SubnetIds:
+          - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 1, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 2, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+        SecurityGroupIds:
+          - !Ref EKSClusterSecurityGroup
+
+  EksClusterEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: true
+      Description: "Encryption key for the EKS Cluster secrets"
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              Service: "eks.amazonaws.com"
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:DescribeKey'
+            Condition:
+              StringEquals:
+                'kms:CallerAccount': !Ref 'AWS::AccountId'
+            Resource: '*'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W12
+            reason: In a key policy, the value of the Resource element is always *, which indicates the KMS key to which the key policy is attached.    
+
+  EksNodegroup:
+    Type: 'AWS::EKS::Nodegroup'
+    Condition: CreateBasicArmNodeGroup
+    DependsOn: EksCluster
+
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodeRole:
+        !Ref EksWorkerRoleArn
+      AmiType: AL2_ARM_64
+      ReleaseVersion: !Ref NodeGroupReleaseVersion
+      CapacityType: ON_DEMAND #SPOT
+      InstanceTypes: !Ref BasicArmInstanceType
+      ScalingConfig:
+        MinSize: !Ref BasicArmNodeGroupSize
+        DesiredSize: !Ref BasicArmNodeGroupSize
+        MaxSize: !Ref BasicArmNodeGroupSize
+      Labels:
+        pool: basic-arm
+      Subnets:
+        - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+
+  Eksx86Nodegroup:
+    Type: 'AWS::EKS::Nodegroup'
+    Condition: CreateBasicx86NodeGroup
+    DependsOn: EksCluster
+
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodeRole:
+        !Ref EksWorkerRoleArn
+      AmiType: AL2_x86_64
+      ReleaseVersion: !Ref NodeGroupReleaseVersion
+      CapacityType: ON_DEMAND #SPOT
+      InstanceTypes: !Ref BasicX86InstanceType
+      ScalingConfig:
+        MinSize: !Ref BasicX86NodeGroupSize
+        DesiredSize: !Ref BasicX86NodeGroupSize
+        MaxSize: !Ref BasicX86NodeGroupSize
+      Labels:
+        pool: basic-x86
+      Subnets:
+        - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+
+  EksNodegroupApplication:
+    Type: 'AWS::EKS::Nodegroup'
+    Condition: CreateApplicationNodeGroup
+    DependsOn: EksCluster
+
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodeRole: !Ref EksWorkerRoleArn
+      AmiType: !Ref ApplicationAmiType
+      ReleaseVersion: !Ref NodeGroupReleaseVersion
+      CapacityType: !Ref ApplicationCapacityType
+      InstanceTypes: !Ref ApplicationInstanceType
+      ScalingConfig:
+        MinSize: !Ref ApplicationNodeGroupSizeMin
+        DesiredSize: !Ref ApplicationNodeGroupSizeMin
+        MaxSize: !Ref ApplicationNodeGroupSizeMax
+      Labels:
+        pool: application
+      Subnets: !If
+        - SingleAZ
+        - - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+        - - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 1, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 2, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+      LaunchTemplate:
+        Id: !Ref EksStaticCpuPolicyLaunchTemplate
+
+  EksNodegroupBenchmark:
+    Type: 'AWS::EKS::Nodegroup'
+    Condition: CreateBenchmarkNodeGroup
+    DependsOn: EksCluster
+
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodeRole:
+        !Ref EksWorkerRoleArn
+      AmiType: !Ref BenchmarkAmiType
+      ReleaseVersion: !Ref NodeGroupReleaseVersion
+      CapacityType: !Ref BenchmarkCapacityType
+      InstanceTypes: !Ref BenchmarkInstanceType
+      ScalingConfig:
+        MinSize: !Ref BenchmarkNodeGroupSizeMin
+        DesiredSize: !Ref BenchmarkNodeGroupSizeMin
+        MaxSize: !Ref BenchmarkNodeGroupSizeMax
+      Labels:
+        pool: benchmark
+      Subnets: !If
+        - SingleAZ
+        - - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+        - - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 1, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+          - !Select [ 2, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+      LaunchTemplate:
+        Id: !Ref EksStaticCpuPolicyLaunchTemplate
+
+  EksNodegroupAerospike:
+    Type: 'AWS::EKS::Nodegroup'
+    Condition: CreateAerospikeNodeGroup
+    DependsOn: EksCluster
+
+    Properties:
+      ClusterName: !Ref EksClusterName
+      NodeRole:
+        !Ref EksWorkerRoleArn
+      AmiType: !Ref AerospikeAmiType
+      ReleaseVersion: !Ref NodeGroupReleaseVersion
+      CapacityType: !Ref AerospikeCapacityType
+      InstanceTypes: !Ref AerospikeInstanceType
+      ScalingConfig:
+        MinSize: !Ref AerospikeNodeGroupSize
+        DesiredSize: !Ref AerospikeNodeGroupSize
+        MaxSize: !Ref AerospikeNodeGroupSize
+      Labels:
+        pool: aerospike
+      Subnets:
+        - !Select [ 0, !Split [ ",", !Ref EksVpcSubnetIds ] ]
+      LaunchTemplate:
+        Id: !Ref EksStaticCpuPolicyLaunchTemplate
+
+  EksPlacementGroup:
+    Type: AWS::EC2::PlacementGroup
+    Properties:
+      Strategy: cluster
+
+  EksStaticCpuPolicyLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Condition: StaticCPUManagerPolicy
+
+    Properties:
+      LaunchTemplateData:
+        Placement:
+          Tenancy: default
+          GroupName: !Ref EksPlacementGroup
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2
+        UserData:
+          Fn::Base64: |
+            Content-Type: multipart/mixed; boundary="===============5736682771019154399=="
+            MIME-Version: 1.0
+
+            --===============5736682771019154399==
+            Content-Type: text/x-shellscript; charset="utf-8"
+            MIME-Version: 1.0
+
+            #!/bin/bash
+            set -ex
+
+            KUBELET_CONFIG=/etc/kubernetes/kubelet/kubelet-config.json
+            KUBELET_CONFIG_TMP=/tmp/kubelet-config.json.tmp
+
+            jq '. + {"cpuManagerPolicy": "static"}' ${KUBELET_CONFIG} > ${KUBELET_CONFIG_TMP}
+            cat ${KUBELET_CONFIG_TMP} > ${KUBELET_CONFIG}
+
+            --===============5736682771019154399==--
+
+
+Outputs:
+  ClusterEndpoint:
+    Value: !GetAtt EksCluster.Endpoint
+
+  ClusterSecurityGroupId:
+    Value: !GetAtt EksCluster.ClusterSecurityGroupId

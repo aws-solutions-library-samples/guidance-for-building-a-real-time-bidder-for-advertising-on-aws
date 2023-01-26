@@ -1,0 +1,15 @@
+duration: "10m"
+
+resources: {}
+numberOfJobs: 40
+
+initialRatePerJob: 0
+slope: 0
+
+workers: 256
+maxWorkers: 256
+
+trackErrors: true
+
+nodeSelector:
+  pool: benchmark

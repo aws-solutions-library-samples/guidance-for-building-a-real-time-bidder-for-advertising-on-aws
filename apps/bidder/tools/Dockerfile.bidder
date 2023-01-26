@@ -1,0 +1,24 @@
+ARG REGISTRY
+ARG IMAGE_PREFIX
+FROM ${REGISTRY}/${IMAGE_PREFIX}golang:1.16-alpine AS builder
+
+RUN apk add gcc musl-dev make
+
+WORKDIR /code
+COPY go.mod go.sum /code/
+RUN go mod download
+# Rebuild libzstd.a: due to the limitations of the Go build system, <https://github.com/valyala/gozstd/issues/20>,
+# gozstd has to include that library prebuilt (for a specific libc) to work with go get.
+RUN cd /go/pkg/mod/github.com/!clearcode!h!q/gozstd@* && make clean && make -j libzstd.a
+COPY . /code
+ARG BIDDER_BUILD_OPTIONS=""
+RUN go build $BIDDER_BUILD_OPTIONS -o bidder.run ./cmd
+
+FROM ${REGISTRY}/${IMAGE_PREFIX}alpine:3.12.2 AS production
+
+COPY --from=builder /code/bidder.run /app/bidder.run
+ENV PATH="/app/:${PATH}"
+
+EXPOSE 8090
+
+CMD ["/app/bidder.run"]

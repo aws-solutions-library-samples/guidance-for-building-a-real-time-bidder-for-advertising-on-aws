@@ -1,0 +1,40 @@
+version: "3.4"
+
+services:
+
+  localstack:
+    image: ${REGISTRY}/localstack:0.12.5
+    ports:
+      - ${LOCALSTACK_PORT-4566}:${LOCALSTACK_PORT-4566}
+    environment:
+      - SERVICES=dynamodb,kinesis
+    volumes:
+      - ./tools/localstack/provisioning:/docker-entrypoint-initaws.d:ro
+
+  golangci-lint:
+    image: "golangci-lint"
+    build:
+      context: ./apps/bidder
+      dockerfile: ./tools/Dockerfile.golangci-lint
+      args:
+        REGISTRY: ${REGISTRY}
+    volumes:
+      - ./apps/bidder:/code
+    working_dir: /code
+
+  aerospike:
+    image: ${REGISTRY}/aerospike-server:5.5.0.3
+    ports:
+      - 3000-3003:3000-3003
+
+  datagen:
+    image: datagen
+    build:
+      context: ./tools/datagen
+      dockerfile: ./Dockerfile
+      args:
+        REGISTRY: ${REGISTRY}
+    depends_on:
+      - localstack
+    env_file:
+      - ./apps/bidder/env/test.env

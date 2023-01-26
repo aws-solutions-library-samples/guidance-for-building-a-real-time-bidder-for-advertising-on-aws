@@ -1,0 +1,29 @@
+{{- range $i, $e := until (.Values.service.count | int) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bidder.fullname" $ }}{{ include "bidder.serviceSuffix" . }}
+  labels:
+    {{- include "bidder.labels" $ | nindent 4 }}
+  {{- with $.Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+    {{ if not (index $.Values.service.annotations "external-dns.alpha.kubernetes.io/hostname") -}}
+    {{- if eq $.Values.stackName "bidder" -}}
+    external-dns.alpha.kubernetes.io/hostname: {{ $.Values.awsRegion }}.ab.clearcode.cc
+    {{- else -}}
+    external-dns.alpha.kubernetes.io/hostname: {{ $.Values.stackName }}{{ include "bidder.serviceSuffix" . }}.{{ $.Values.awsRegion }}.ab.clearcode.cc
+    {{- end -}}
+  {{- end }}
+spec:
+  type: {{ $.Values.service.type }}
+  ports:
+    - port: {{ $.Values.service.port }}
+      targetPort: {{ $.Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "bidder.selectorLabels" $ | nindent 4 }}
+{{- end }}

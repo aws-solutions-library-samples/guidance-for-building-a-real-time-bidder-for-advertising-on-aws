@@ -1,0 +1,23 @@
+duration: "10m"
+initialRatePerJob: 100
+# 200,000 rps / (5 * 60 s)
+slope: 667
+# 1 x CPU
+workers: 4
+# 16 x CPU
+maxWorkers: 64
+# 2 nodes * (59 CPU per node / 4 CPU per replica)
+numberOfJobs: 28
+enableProfiler: true
+trackErrors: true
+
+image:
+  tag: "8fee6486f0241c37adbc160391d8a4002519439f"
+
+resources:
+  limits:
+    cpu: 4
+    memory: 8Gi
+
+nodeSelector:
+  pool: benchmark

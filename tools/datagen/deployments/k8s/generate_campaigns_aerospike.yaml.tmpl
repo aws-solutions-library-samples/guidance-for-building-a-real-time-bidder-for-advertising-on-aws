@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-campaigns-aerospike
+spec:
+  template:
+    metadata:
+      labels:
+        app: datagen
+    spec:
+      nodeSelector:
+        pool: benchmark
+      restartPolicy: OnFailure
+      containers:
+        - image: ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_PREFIX}datagen:latest
+          name: generate-campaigns
+          imagePullPolicy: Always
+          args:
+            - -output=aerospike
+            - -aerospike-namespace=bidder
+            - -type=campaigns
+            - -low=1
+            - -high=${DATAGEN_ITEMS_PER_JOB}
+            - -concurrency=${DATAGEN_CONCURRENCY}
+            - -aerospike-host=aerospike-aerospike
+          env:
+            - name: AWS_REGION
+              value: ${AWS_REGION}

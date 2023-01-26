@@ -1,0 +1,15 @@
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+
+configMapGenerator:
+  - name: bidder-dashboards
+    files:
+      - ./bidder.json
+      - ./cloudwatch.json
+      - ./cloudwatch-nlb.json
+      - ./file-descriptors.json
+      - ./sockets-tcp.json
+      - ./autoscaler.json
+      - ./cloudwatch-dax.json

@@ -1,0 +1,33 @@
+---
+# Use a k8s load balancer, not AWS.
+service:
+  type: LoadBalancer
+  port: 8094
+  targetPort: 8094
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: null
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: null
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: null
+    service.beta.kubernetes.io/aws-load-balancer-type: null
+    service.beta.kubernetes.io/aws-load-balancer-internal: null
+
+# Not many nodes to choose in minikube.
+nodeSelector:
+  pool: null
+
+config:
+  # Must be higher than the 100ms if running outside AWS.
+  MODELREQUEST_TIMEOUT: "10s"
+
+# Disable to not need a Prometheus installation.
+serviceMonitor:
+  enabled: false
+
+# First build the image locally and push into minikube cache:
+#
+#     make model@build MODEL_IMAGE_VERSION=XXX
+#     minikube image load ${AWS_ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/model:XXX
+#
+# for a unique image tag XXX.
+image:
+  pullPolicy: IfNotPresent

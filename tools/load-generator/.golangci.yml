@@ -1,0 +1,112 @@
+# https://github.com/golangci/golangci/wiki/Configuration
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+
+linters-settings:
+  dupl:
+    threshold: 150
+  funlen:
+    lines: 100
+    statements: 50
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - hugeParam
+      - rangeValCopy
+  gocyclo:
+    min-complexity: 15
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  golint:
+    min-confidence: 0
+  gomnd:
+    settings:
+      mnd:
+        checks:
+          - argument
+          - assign
+          - case
+          - condition
+          - operation
+          - return
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+  lll:
+    line-length: 140
+  maligned:
+    suggest-new: true
+  misspell:
+    locale: US
+
+linters:
+  disable-all: true
+
+  enable:
+    - bodyclose
+    - deadcode
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+
+issues:
+  exclude-use-default: false
+
+  exclude:
+    #TODO: remove this exclusion after https://github.com/golang/lint/issues/381
+    # is fixed by https://github.com/golang/lint/pull/380 or something else
+    - "should have a package comment, unless it's in another file for this package"
+    - "at least one file in a package should have a package comment"
+    - "Use of weak random number generator"
+    - 'declaration of "err" shadows declaration'
+
+  exclude-rules:
+    # reporters.go is full of magic numbers leftover from Vegeta; they don't seem to cause problems
+    - path: code/load_generator/reporters.go
+      text: "Magic number"

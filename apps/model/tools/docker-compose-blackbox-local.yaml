@@ -1,0 +1,21 @@
+# Override for using locally built images.
+
+version: "3.4"
+
+services:
+
+  blackbox-tests:
+    image: "blackbox"
+    build:
+      context: ./apps/model
+      dockerfile: ./tools/Dockerfile.blackbox
+      args:
+        REGISTRY: ${REGISTRY}
+
+  model:
+    image: "model"
+    build:
+      context: ./apps/model
+      dockerfile: ./tools/Dockerfile.model
+      args:
+        REGISTRY: ${REGISTRY}

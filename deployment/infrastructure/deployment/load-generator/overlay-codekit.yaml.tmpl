@@ -1,0 +1,27 @@
+---
+duration: "10m"
+
+numberOfJobs: 1
+ratePerJob: 0
+initialRatePerJob: 1
+# 2,000,000 / 40 = 50,000
+# 50,000 / 600 = 84
+# slope: 84 -- Slope is depriciated. 
+devicesUsed:1000
+workers: 4096
+maxWorkers: 4096
+
+trackErrors: true
+
+nodeSelector:
+  pool: benchmark
+
+resources:
+  limits:
+    cpu: 59000m
+    memory: 200Gi
+  requests:
+    cpu: 59000m
+    memory: 200Gi
+status:
+    qosClass: guaranteed

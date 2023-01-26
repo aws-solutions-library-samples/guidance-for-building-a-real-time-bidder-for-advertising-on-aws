@@ -1,0 +1,127 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS VPC - Public subnets only'
+
+Parameters:
+  EksVpcId:
+    Type: String
+    Description: Id of VPC for EKS cluster
+
+  EksRouteTableId:
+    Type: String
+    Description: Id of route table of VPC for EKS cluster
+
+  EksVpcSubnetIds:
+    Type: String
+    Description: List of VPC subnets for EKS cluster
+
+  EksSecurityGroupId:
+    Description: Id of EKS security group
+    Type: String
+
+Resources:
+  KinesisEndpointSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref EksVpcId
+      GroupDescription: Communication between EKS cluster nodes and Kinesis VPC endpoint
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F1000
+            reason: Kinesis nodes may need to communicate with the external services like e.g. EKS cluster, AWS Cloudwatch.
+
+  KinesisEndpointSgFromEksWorkerSg:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow Worker Nodes to communicate with Kinesis VPC endpoints
+      IpProtocol: "tcp"
+      SourceSecurityGroupId: !Ref EksSecurityGroupId
+      GroupId: !Ref KinesisEndpointSg
+      FromPort: 443
+      ToPort: 443
+
+  ECREndpointSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref EksVpcId
+      GroupDescription: Communication between EKS cluster and ECR VPC endpoint
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F1000
+            reason: EKS need to communicate with the ECR
+
+  ECRSgFromEksWorkerSg:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow Worker Nodes to communicate with Kinesis VPC endpoints
+      IpProtocol: "tcp"
+      SourceSecurityGroupId: !Ref EksSecurityGroupId
+      GroupId: !Ref ECREndpointSg
+      FromPort: 443
+      ToPort: 443
+
+  DynamoDBEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref EksVpcId
+      RouteTableIds:
+        - !Ref EksRouteTableId
+      ServiceName:
+        !Sub "com.amazonaws.${AWS::Region}.dynamodb"
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref EksVpcId
+      RouteTableIds:
+        - !Ref EksRouteTableId
+      ServiceName:
+        !Sub "com.amazonaws.${AWS::Region}.s3"
+
+  KinesisStreamsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref EksVpcId
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName:
+        !Sub "com.amazonaws.${AWS::Region}.kinesis-streams"
+      SubnetIds: !Split [",", !Ref EksVpcSubnetIds]
+      SecurityGroupIds:
+        - !Ref KinesisEndpointSg
+
+  KinesisFirehoseEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref EksVpcId
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName:
+        !Sub "com.amazonaws.${AWS::Region}.kinesis-firehose"
+      SubnetIds: !Split [",", !Ref EksVpcSubnetIds]
+      SecurityGroupIds:
+        - !Ref KinesisEndpointSg
+
+  ECRAPIEndpoint:
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !GetAtt ECREndpointSg.GroupId
+      SubnetIds: !Split [",", !Ref EksVpcSubnetIds]
+      VpcId: !Ref EksVpcId
+
+  ECRDockerEndpoint:
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !GetAtt ECREndpointSg.GroupId
+      SubnetIds: !Split [",", !Ref EksVpcSubnetIds]
+      VpcId: !Ref EksVpcId

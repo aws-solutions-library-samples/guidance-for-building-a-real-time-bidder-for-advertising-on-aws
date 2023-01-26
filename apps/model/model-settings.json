@@ -1,0 +1,8 @@
+{
+    "name": "ctr-lgbm",
+    "implementation": "mlserver_lightgbm.LightGBMModel",
+    "parameters": {
+        "uri": "./lgbm_model.txt",
+        "version": "v0.1.0"
+    }
+}

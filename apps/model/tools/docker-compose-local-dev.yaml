@@ -1,0 +1,21 @@
+version: "3.4"
+
+services:
+
+  localstack:
+    image: ${REGISTRY}/localstack:0.12.5
+    ports:
+      - ${LOCALSTACK_PORT-4566}:${LOCALSTACK_PORT-4566}
+    volumes:
+      - ./tools/localstack/provisioning:/docker-entrypoint-initaws.d:ro
+
+  golangci-lint:
+    image: "golangci-lint"
+    build:
+      context: ./apps/model
+      dockerfile: ./tools/Dockerfile.golangci-lint
+      args:
+        REGISTRY: ${REGISTRY}
+    volumes:
+      - ./apps/model:/code
+    working_dir: /code

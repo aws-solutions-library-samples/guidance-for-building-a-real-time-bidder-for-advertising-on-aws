@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "load-generator.fullname" . }}
+  labels:
+    {{- include "load-generator.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 10
+  parallelism: {{ .Values.numberOfJobs }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "load-generator.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "load-generator.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ include "load-generator.imagePullPolicy" . }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion }}
+            - name: GOMAXPROCS
+              value: {{ include "load-generator.gomaxprocs" . }}
+          args:
+            {{- include "load-generator.evaluateTargets" $ }}
+            {{- range $.targets }}
+            - --target={{ . }}
+            {{- end }}
+            - --duration={{ .Values.duration }}
+            - --timeout={{ .Values.timeout }}
+            - --start-delay={{ .Values.startDelay }}
+            - --devices-used={{ printf "%d" (.Values.devicesUsed | int64) }}
+            - --initial-rate={{ printf "%d" (.Values.ratePerJob | int64) }}
+            - --workers={{ printf "%d" (.Values.workers | int64) }}
+            {{ if .Values.enableProfiler -}}
+            - --profiler-url={{ .Values.profilerUrl }}
+            - --profiler-bucket={{ .Values.profilerBucket }}
+            - --profiler-output={{ .Values.profilerOutput }}
+            {{- end }}
+            - --track-errors={{ .Values.trackErrors }}
+      {{- if $.Values.waitForService.enable }}
+      initContainers:
+        - name: wait-for-service
+          image: "{{ .Values.public_ecr_registry }}/{{ .Values.waitForService.image }}"
+          env:
+            - name: TARGETS
+              value: {{ include "load-generator.waitForServiceTargets" $ }}
+          args:
+            - 'sh'
+            - '-c'
+            - |
+              for TARGET in $TARGETS; do
+                until wget --spider --no-check-certificate -T 5 $TARGET; do
+                  echo "Still waiting for $TARGET..."
+                  sleep 1;
+                done;
+              done;
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}

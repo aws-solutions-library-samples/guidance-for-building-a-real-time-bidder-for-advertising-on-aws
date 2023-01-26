@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "e2e.fullname" . }}
+  labels:
+    {{- include "e2e.labels" . | nindent 4 }}
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 10
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "e2e.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "e2e.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "e2e.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ include "e2e.imagePullPolicy" . }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 3
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ .Values.awsRegion }}
+            - name: ECR_REGISTRY
+              value: "{{ .Values.image.registry }}"
+          args:
+            - -vvvv
+            - --cov
+            - --junitxml=test-report.xml
+            - --bidder-image-tag={{ .Values.bidderImageTag }}
+            - -n2
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}

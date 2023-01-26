@@ -1,0 +1,17 @@
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+
+configMapGenerator:
+  - name: aerospike-dashboards
+    files:
+      - alerts.json
+      - cluster.json
+      - latency.json
+      - namespace.json
+      - node.json
+      - xdr.json
+
+resources:
+  - service-monitor.yaml

@@ -1,0 +1,277 @@
+Description: AWS Kinesis stack
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Bucket name
+    Default: aws-bidder-bids
+
+  DataStreamName:
+    Type: String
+    Description: Kinesis Data Stream name
+    Default: aws-bidder-bids
+
+  DataStreamShardCount:
+    Type: Number
+    Description: Kinesis Data Stream shard count
+    Default: '1'
+
+  DeliveryEnabled:
+    Type: Number
+    Description: Flag if Firehose and S3 bucket should be created
+    AllowedValues: [0, 1]
+    Default: 1
+
+  DeliveryStreamName:
+    Type: String
+    Description: Kinesis Firehose Delivery Stream name
+    Default: aws-bidder-bids
+
+  DeliveryStreamBufferInterval:
+    Type: Number
+    Description: Kinesis Firehose Delivery Stream buffer interval hint in seconds
+    Default: '60'
+
+  DeliveryStreamBufferSize:
+    Type: Number
+    Description: Kinesis Firehose Delivery Stream buffer size in MB
+    Default: '128'
+
+  DeliveryStreamCompression:
+    Type: String
+    Description: Compression format
+    AllowedValues: [ GZIP, HADOOP_SNAPPY, Snappy, ZIP, UNCOMPRESSED]
+    Default: GZIP
+
+  ProducerRoleARN:
+    Type: String
+    Description: ARN of the role that's going to write to the stream
+
+Conditions:
+  CreateKinesisStream: !Not [!Equals [!Ref DataStreamShardCount, 0]]
+  CreateDeliveryResouces: !And
+    - !Equals [!Ref DeliveryEnabled, 1]
+    - !Not [!Equals [!Ref DataStreamShardCount, 0]]
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Condition: CreateDeliveryResouces
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        LogFilePrefix: 'access-logs'
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: CreateDeliveryResouces
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - "s3:AbortMultipartUpload"
+              - "s3:GetBucketLocation"
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:PutObject"
+            Resource: 
+              - !GetAtt S3Bucket.Arn
+              - !Sub '${S3Bucket.Arn}/*'
+          - Effect: Allow
+            Principal:
+              Service: "firehose.amazonaws.com"
+            Action:
+              - "s3:AbortMultipartUpload"
+              - "s3:GetBucketLocation"
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:PutObject"
+            Resource: 
+              - !GetAtt S3Bucket.Arn
+              - !Sub '${S3Bucket.Arn}/*'
+
+  DataStream:
+    Type: AWS::Kinesis::Stream
+    Condition: CreateKinesisStream
+    Properties:
+      Name: !Ref DataStreamName
+      ShardCount: !Ref DataStreamShardCount
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: !Ref DataStreamEncryptionKey
+      Tags:
+        - Key: Name
+          Value: !Ref DataStreamName
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: The application relies on the static stream name.
+
+  DeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Condition: CreateDeliveryResouces
+
+    Properties:
+      DeliveryStreamName: !Ref DeliveryStreamName
+      DeliveryStreamType: KinesisStreamAsSource
+
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt DataStream.Arn
+        RoleARN: !GetAtt DeliveryRole.Arn
+
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !GetAtt S3Bucket.Arn
+
+        BufferingHints:
+          IntervalInSeconds: !Ref DeliveryStreamBufferInterval
+          SizeInMBs: !Ref DeliveryStreamBufferSize
+
+        CompressionFormat: !Ref DeliveryStreamCompression
+        RoleARN: !GetAtt DeliveryRole.Arn
+
+  DeliveryRole:
+    Type: AWS::IAM::Role
+    Condition: CreateDeliveryResouces
+
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+      Path: "/"
+      Policies:
+        - PolicyName: aws-bidder-delivery-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:AbortMultipartUpload'
+                  - 's3:GetBucketLocation'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                  - 's3:ListBucketMultipartUploads'
+                  - 's3:PutObject'
+                Resource:
+                  - !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - !Ref S3Bucket
+                  - !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - !Ref S3Bucket
+                      - '/*'
+              - Effect: Allow
+                Action: 'logs:PutLogEvents'
+                Resource:
+                  - !Join
+                    - ''
+                    - - 'arn:aws:logs:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - 'log-group:/aws/kinesisfirehose/'
+                      - !Ref DeliveryStreamName
+                      - ':log-stream:*'
+              - Effect: Allow
+                Action:
+                    - "kinesis:DescribeStream"
+                    - "kinesis:GetShardIterator"
+                    - "kinesis:GetRecords"
+                    - "kinesis:ListShards"
+                Resource:
+                  - !GetAtt DataStream.Arn
+
+  DataStreamEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: true
+      Description: "Encryption key for the kinesis stream"
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              Service: "kinesis.amazonaws.com"
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:DescribeKey'
+            Condition:
+              StringEquals:
+                'kms:CallerAccount': !Ref 'AWS::AccountId'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              AWS: !Ref ProducerRoleARN
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:CreateGrant'
+              - 'kms:ListGrants'
+              - 'kms:DescribeKey'
+            Resource: '*'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W12
+            reason: In a key policy, the value of the Resource element is always *, which indicates the KMS key to which the key policy is attached.            
+Outputs:
+  S3BucketARN:
+    Value: !GetAtt S3Bucket.Arn
+    Description: ARN of S3 bucket with bids data
+    Condition: CreateDeliveryResouces
+
+  S3BucketName:
+    Value: !Ref BucketName
+    Description: Name of S3 bucket with bids data
+    Condition: CreateDeliveryResouces
+
+  DataStreamName:
+    Value:  !Ref DataStreamName
+    Description: Kinesis Data Stream name for bids data
+    Condition: CreateKinesisStream
+
+  DataStreamArn:
+    Value:  !GetAtt DataStream.Arn
+    Description: Kinesis Data Stream ARN for bids data
+    Condition: CreateKinesisStream

@@ -1,0 +1,19 @@
+{{ if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "model.labels" . | nindent 4 }}
+  name: {{ include "model.fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      app: model-internal
+  endpoints:
+    - targetPort: {{ .Values.serviceInternal.port }}
+      metricRelabelings:
+        # prefix metric names with "model"
+        - sourceLabels: ["__name__"]
+          targetLabel: "__name__"
+          replacement: "model_$1"
+{{ end }}

@@ -1,0 +1,49 @@
+version: "3.4"
+
+services:
+
+  blackbox-tests:
+    image: "blackbox"
+    build:
+      context: ./apps/model
+      dockerfile: ./tools/Dockerfile.blackbox
+      args:
+        REGISTRY: ${REGISTRY}
+    networks:
+      - localstack
+      - model
+    depends_on:
+      - model
+    volumes:
+      - ./apps/model:/code
+    working_dir: /code
+    env_file:
+      - ./apps/model/env/test.env
+
+  model:
+    image: ${REGISTRY}/model:${MODEL_IMAGE_VERSION}
+    networks:
+      - localstack
+      - model
+    ports:
+      - 8094:8094
+      - 8095:8095
+    depends_on:
+      - localstack
+    env_file:
+      - ./apps/model/env/test.env
+
+  localstack:
+    image: ${REGISTRY}/localstack:0.12.5
+    networks:
+      - localstack
+    ports:
+      - ${LOCALSTACK_PORT-4566}:${LOCALSTACK_PORT-4566}
+    environment:
+      - START_WEB=0
+    volumes:
+      - ./tools/localstack/provisioning:/docker-entrypoint-initaws.d:ro
+
+networks:
+  localstack: ~
+  model: ~

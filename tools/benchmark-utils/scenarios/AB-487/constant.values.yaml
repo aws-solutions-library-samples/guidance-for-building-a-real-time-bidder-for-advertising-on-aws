@@ -1,0 +1,18 @@
+duration: "15m"
+
+resources: {}
+numberOfJobs: 48
+
+initialRatePerJob: 0
+slope: 0
+
+workers: 256
+maxWorkers: 256
+
+trackErrors: true
+
+#image:
+#  tag: "950bf466e81c63b4122c6518ff1354345dc85726"
+
+nodeSelector:
+  pool: benchmark

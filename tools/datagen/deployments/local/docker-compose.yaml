@@ -1,0 +1,9 @@
+version: "3"
+services:
+  dynamodb:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+  datagen:
+    image: ${DATAGEN_IMAGE_TAG}
+    scale: 0
