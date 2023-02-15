@@ -27,8 +27,7 @@ require (
 	github.com/mxmCherry/openrtb v13.0.0+incompatible
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.3 // indirect
-	github.com/prometheus/client_golang v1.9.0
-	github.com/prometheus/procfs v0.3.0 // indirect
+	github.com/prometheus/client_golang v1.11.1
 	github.com/rs/zerolog v1.20.0
 	github.com/segmentio/ksuid v1.0.3
 	github.com/stretchr/testify v1.6.1
@@ -39,6 +38,6 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
 	go.uber.org/atomic v1.7.0
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
-	google.golang.org/protobuf v1.25.1-0.20201020201750-d3470999428b
+	google.golang.org/protobuf v1.26.0-rc.1
 	gvisor.dev/gvisor v0.0.0-20210403071834-9a8692c82ac5
 )
