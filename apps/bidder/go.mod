@@ -1,6 +1,6 @@
 module bidder
 
-go 1.16
+go 1.20
 
 require (
 	emperror.dev/errors v0.8.0

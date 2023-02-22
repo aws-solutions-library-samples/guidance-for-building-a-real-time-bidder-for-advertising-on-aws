@@ -1,7 +1,7 @@
 ARG REGISTRY
 ARG IMAGE_PREFIX
 
-FROM  ${REGISTRY}/${IMAGE_PREFIX}golang:1.16-alpine AS build
+FROM  ${REGISTRY}/${IMAGE_PREFIX}golang:1.20-alpine AS build
 
 WORKDIR /code
 

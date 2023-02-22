@@ -23,7 +23,7 @@ require (
 	github.com/valyala/fasthttp v1.44.0
 	github.com/valyala/fasttemplate v1.2.2
 	go.uber.org/atomic v1.10.0
-	gvisor.dev/gvisor v0.0.0-20230222010602-6a4908b26239
+	gvisor.dev/gvisor v0.0.0-20230222090535-ab51cab6adaa
 	pgregory.net/rapid v0.3.3
 )
 

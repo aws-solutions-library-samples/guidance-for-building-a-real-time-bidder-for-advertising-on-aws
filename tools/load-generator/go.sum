@@ -969,6 +969,8 @@ gvisor.dev/gvisor v0.0.0-20210427232001-f54d87b9ecee h1:MCxELOAl3bLj6U0HWGk8ucNf
 gvisor.dev/gvisor v0.0.0-20210427232001-f54d87b9ecee/go.mod h1:ucHEMlckp+S/YzKEpwwAyGBhAh807Wxq/8Erc6gFxCE=
 gvisor.dev/gvisor v0.0.0-20230222010602-6a4908b26239 h1:qKJzqk0+IWpSiIi4RtYn6CLXVTWX0G1a9VLQytPyucA=
 gvisor.dev/gvisor v0.0.0-20230222010602-6a4908b26239/go.mod h1:pzr6sy8gDLfVmDAg8OYrlKvGEHw5C3PGTiBXBTCx76Q=
+gvisor.dev/gvisor v0.0.0-20230222090535-ab51cab6adaa h1:C3kL660KcOLemeG5SNnXi0sjxx0l/yszz62ziKvdoOc=
+gvisor.dev/gvisor v0.0.0-20230222090535-ab51cab6adaa/go.mod h1:pzr6sy8gDLfVmDAg8OYrlKvGEHw5C3PGTiBXBTCx76Q=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
