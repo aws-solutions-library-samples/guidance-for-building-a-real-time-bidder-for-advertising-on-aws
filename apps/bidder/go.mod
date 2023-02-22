@@ -22,7 +22,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jpillora/backoff v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de
 	github.com/mxmCherry/openrtb v13.0.0+incompatible
 	github.com/onsi/ginkgo v1.14.2 // indirect
@@ -32,7 +31,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/bytebufferpool v1.0.0
-	github.com/valyala/fasthttp v1.19.0
+	github.com/valyala/fasthttp v1.34.0
 	github.com/valyala/fastjson v1.6.3
 	github.com/valyala/fasttemplate v1.2.1
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
