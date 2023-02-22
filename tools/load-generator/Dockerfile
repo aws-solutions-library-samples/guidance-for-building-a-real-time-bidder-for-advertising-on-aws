@@ -1,6 +1,6 @@
 ARG REGISTRY
 ARG IMAGE_PREFIX
-FROM ${REGISTRY}/${IMAGE_PREFIX}golang:1.16-alpine AS builder
+FROM ${REGISTRY}/${IMAGE_PREFIX}golang:1.20-alpine AS builder
 
 WORKDIR /code/
 COPY go.mod go.sum /code/
