@@ -36,6 +36,7 @@ The Real-Time Bidder Solution on AWS consist of 5 modules:
 
 * Administrator and Programmatic access
 * Git security credentials.
+* If you already are using cloud9 in the AWS Account you also have AWSCloud9SSMInstanceProfile policy in your IAM Policy and you don't have to create it again. Comment AWSCloud9SSMInstanceProfile object in deployment/infrastructure/templates/cloud9.yaml file (line number 40)
 
 ### 4. Service Limits - 
 
@@ -139,7 +140,7 @@ export EKS_WORKER_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Na
 
 export EKS_ACCESS_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Name=='EKSAccessRoleARN'].Value" --output text`
 
-export STACK_NAME=$APPLICATION_STACK_NAME
+export STACK_NAME=$ROOT_STACK
 ```
 18. Now, run the following command to assume EKS_ACCESS_ROLE to connect to the EKS cluster.
 ```

@@ -2,14 +2,10 @@
   "app": "python3 app.py",
   "context": {
     "dev": {
-      "AWS_ACCOUNT_ID": "",
-      "RTBKIT_ROOT_STACK_NAME": "rtbkit-dev22",
-      "RTBKIT_VARIANT": "Aerospike"
-    },
-    "staging": {
-      "AWS_ACCOUNT_ID": "<>",
-      "RTBKIT_ROOT_STACK_NAME": "<rtbkit-bkr-stg>",
+      "AWS_ACCOUNT_ID": "<Provide AWS Account ID>",
+      "RTBKIT_ROOT_STACK_NAME": "<Provide Unique Stack name>",
       "RTBKIT_VARIANT": "<DynamoDB/Aerospike>"
+    },
       
     "@aws-cdk/core:newStyleStackSynthesis": true,
     "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
