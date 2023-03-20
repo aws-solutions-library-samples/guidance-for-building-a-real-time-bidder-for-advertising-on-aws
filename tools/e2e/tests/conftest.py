@@ -187,7 +187,7 @@ def values_yaml(
             # timeout.
             "BIDREQUEST_TIMEOUT": "10s",
             # Only specific tests enable it.
-            "KINESIS_DISABLE": "true",
+            "KINESIS_DISABLE": "false",
             # 3.0 except for tests checking switching the default to 2.5.
             "BIDREQUEST_OPEN_RTB_VERSION": "3.0",
         }

@@ -196,7 +196,7 @@ Resources:
                       - !Ref 'AWS::Region'
                       - ':'
                       - !Ref 'AWS::AccountId'
-                      - 'log-group:/aws/kinesisfirehose/'
+                      - ':log-group:/aws/kinesisfirehose/'
                       - !Ref DeliveryStreamName
                       - ':log-stream:*'
               - Effect: Allow

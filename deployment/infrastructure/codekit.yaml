@@ -422,6 +422,11 @@ Outputs:
     Value: !GetAtt EksWorkerRole.Arn
     Export:
       Name: EKSWorkerRoleARN
+
+  EksNvmeProvisionerRepository:
+    Value: !Sub "${AWS::StackName}-nvme-provisioner"
+    Export:
+      Name: EksNvmeProvisionerRepository
   
   Cloud9IDEURL:
     Description: IDE URL to access cloud9

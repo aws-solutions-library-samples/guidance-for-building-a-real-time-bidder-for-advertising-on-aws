@@ -10,7 +10,7 @@ Parameters:
   EksClusterVersion:
     Type: String
     Description: Version of EKS cluster
-    Default: '1.21'
+    Default: '1.22'
 
   EksVpcId:
     Type: String
@@ -35,7 +35,7 @@ Parameters:
   NodeGroupReleaseVersion:
     Type: String
     Description: Release version of the Node group
-    Default: "1.21.2-20211003"
+    Default: "1.22.17-20230217"
 
   BasicArmNodeGroupSize:
     Type: Number
@@ -125,7 +125,7 @@ Parameters:
   AerospikeCapacityType:
     Type: String
     Description: Capacity type of Aerospike nodes
-    Default: SPOT
+    Default: ON_DEMAND
 
   StaticCPUManagerPolicy:
     Type: Number

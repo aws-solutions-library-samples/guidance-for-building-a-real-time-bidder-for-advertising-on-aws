@@ -1,6 +1,6 @@
 _PWD := $(shell pwd | sed "s~/cygdrive/c~c:~")
 COMMA := ,
-CF_BUCKET_REGION=us-east-1
+CF_BUCKET_REGION=us-west-2
 STACK_NAME ?= bidder
 DYNAMODB_TEMPLATE_FILE ?= dynamodb.yaml
 DYNAMODB_STACK_NAME ?= dynamodb
@@ -10,7 +10,7 @@ EKS_ACCESS_ROLE_ARN ?= $(shell aws cloudformation list-exports --query "Exports[
 EKS_WORKER_ROLE_ARN ?= $(shell aws cloudformation list-exports --query "Exports[?Name=='EKSWorkerRoleARN'].Value" --output text)
 AEROSPIKE_NODE_COUNT = $(shell kubectl get nodes -l pool=aerospike --no-headers | wc -l  | tr -d ' ')
 AWS_USERNAME = $(shell aws sts get-caller-identity --output json | jq -r  '.Arn' | cut -d/ -f2)
-AWS_REGION ?= us-east-1
+AWS_REGION ?= us-west-2
 AWS_TAGS = "StackName=$(STACK_NAME)" "Variant=$(VARIANT)" "Owner=$(AWS_USERNAME)"
 K8S_AWS_TAGS = "StackName=$(STACK_NAME),Variant=$(VARIANT),Owner=$(AWS_USERNAME)"
 
@@ -139,7 +139,7 @@ eks@provision-prometheus: ## Provision Prometheus stack, adding a timeout parame
 		--version 15.1.3 \
 		prom prometheus-community/kube-prometheus-stack \
 		-f deployment/infrastructure/deployment/prometheus/prometheus-values.yaml \
-		--timeout 10m30s
+		--timeout 10m30s --debug
 
 eks@provision-prometheus-adapter: ## Provision Prometheus adapter for custom metrics API
 	helm repo add --force-update prometheus-community https://prometheus-community.github.io/helm-charts
@@ -318,7 +318,7 @@ aerospike@deploy: ## Deploy Aerospike cluster
 	helm upgrade --install $(HELM_OPTS) aerospike aerospike/aerospike \
 		--version 5.5.0 \
 		-f deployment/infrastructure/deployment/aerospike/values.yaml \
-		--set image.repository=$(AWS_PUBLIC_ECR_REGISTRY)/$(AWS_PUBLIC_IMAGE_PREFIX)aerospike-server \
+		--set image.repository=$(AWS_PUBLIC_ECR_REGISTRY)/$(AWS_PUBLIC_IMAGE_PREFIX)aerospike \
 		$(if $(strip $(subst basic,,$(AEROSPIKE_VARIANT))),-f deployment/infrastructure/deployment/aerospike/$(AEROSPIKE_VARIANT)-values.yaml,) \
 		--set-file confFilePath=$(if $(wildcard deployment/infrastructure/deployment/aerospike/$(AEROSPIKE_VARIANT)-aerospike.template.conf),deployment/infrastructure/deployment/aerospike/$(AEROSPIKE_VARIANT)-aerospike.template.conf,deployment/infrastructure/deployment/aerospike/aerospike.template.conf) \
 		$(if $(strip $(subst basic,,$(AEROSPIKE_VARIANT))),--set dbReplicas=$(AEROSPIKE_NODE_COUNT),)

@@ -1,8 +1,8 @@
 include $(dir $(lastword $(MAKEFILE_LIST)))/../../config.mk
 
 ECR_MIRROR_ARCHITECTURES := "amd64 arm64"
-ECR_IMAGES_TO_MIRROR := "stelligent/cfn_nag:0.7.12 golang:1.16 golang:1.16-alpine golangci/golangci-lint:v1.39-alpine alpine:3.12.2 aerospike/aerospike-server:5.5.0.3 python:3.9-slim debian:stretch-slim"
-ECR_CODEKIT_IMAGES_TO_MIRROR := "alpine:3.12.2 golang:1.16 golang:1.16-alpine aerospike/aerospike-server:5.5.0.3 debian:stretch-slim alpine:latest"
+ECR_IMAGES_TO_MIRROR := "stelligent/cfn_nag:0.7.12 golang:1.20 golang:1.20-alpine golangci/golangci-lint:v1.39-alpine alpine:3.12.2 aerospike/aerospike:5.5.0.3 python:3.9-slim debian:stretch-slim"
+ECR_CODEKIT_IMAGES_TO_MIRROR := "alpine:3.12.2 golang:1.20 golang:1.20-alpine aerospike/aerospike:5.5.0.3 debian:stretch-slim alpine:latest"
 
 ECR_APP_IMAGES := bidder datagen load-generator report-aggregator
 

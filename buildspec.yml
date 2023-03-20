@@ -15,6 +15,10 @@ phases:
   build:
     commands:
       - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - mkdir -vp ~/.docker/cli-plugins/
+      - curl --silent -L "https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-arm-v6" > ~/.docker/cli-plugins/docker-buildx 
+      - chmod a+x ~/.docker/cli-plugins/docker-buildx
+      - export DOCKER_BUILDKIT=1
       - echo "Starting build `date` in `pwd`"
       - chmod +x ./initialize-repo.sh && ./initialize-repo.sh ${AWS_ACCOUNT_ID} ${AWS_REGION} ${RTBKIT_ROOT_STACK_NAME} ${RTBKIT_VARIANT} yes yes
       - echo "Build completed `date`"

@@ -107,6 +107,8 @@ export APPLICATION_STACK_NAME=`aws cloudformation describe-stacks --stack-name $
 export CODEBUILD_STACK_NAME=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq '.Stacks[].Outputs[] | select(.OutputKey=="CodebuildStackARN") | .OutputValue' | cut -d/ -f2`
 export EKS_WORKER_ROLE_ARN=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq -r '.Stacks[].Outputs[] | select(.OutputKey=="EKSWorkerRoleARN") | .OutputValue'`
 export EKS_ACCESS_ROLE_ARN=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq -r '.Stacks[].Outputs[] | select(.OutputKey=="EKSAccessRoleARN") | .OutputValue'`
+export AWS_ECR_NVME=`aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq -r '.Stacks[].Outputs[] | select(.OutputKey=="EksNvmeProvisionerRepository") | .OutputValue'`
+#export AWS_LOAD_GENERATOR = `aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq -r '.Stacks[].Outputs[] | select(.OutputKey=="EksNvmeProvisionerRepository") | .OutputValue'`
 export DYNAMODB_TABLENAME_PREFIX=${STACK_NAME}_
 
 # test helm version release 3.8.2 is needed for eks 1.21 k8s
@@ -125,12 +127,17 @@ echo "[Setup] Building the basic service on ARM64 and pushing it to the ECR regi
 make eks@provision-codekit-`echo ${VARIANT,,}`
 
 echo "[Setup] Building the bidder on ARM64 and pushing it to the ECR registry..."
-make bidder@build IMAGE_PREFIX="${STACK_NAME}-"
-make bidder@push IMAGE_PREFIX="${STACK_NAME}-"
+ make bidder@build IMAGE_PREFIX="${STACK_NAME}-"
+ make bidder@push IMAGE_PREFIX="${STACK_NAME}-"
 
 echo "[Setup] Building the model on ARM64 and pushing it to the ECR registry..."
-make model@build IMAGE_PREFIX="${STACK_NAME}-"
-make model@push IMAGE_PREFIX="${STACK_NAME}-"
+#make model@build IMAGE_PREFIX="${STACK_NAME}-"
+#make model@push IMAGE_PREFIX="${STACK_NAME}-"
+
+echo "[Setup] Building the nvme-provisioner and pushing it to the ECR registry..."
+make buildx@install
+make nvme-provisioner@build
+#make nvme-provisioner@push
 
 if sh -c "echo $VARIANT | grep -q -E '^(Aerospike)$'" ; then
     echo "[Setup] Deploying the Aerospike cluster"
@@ -145,13 +152,13 @@ if sh -c "echo $USE_DATAGEN | grep -q -E '^(yes)$'" ; then
     make datagen@push IMAGE_PREFIX="${STACK_NAME}-"
     if sh -c "echo $VARIANT | grep -q -E '^(Aerospike)$'" ; then
        echo "Datagen on Aerospike has been disabled"
-       make aerospike@datagen DATAGEN_CONCURRENCY=32 DATAGEN_ITEMS_PER_JOB=1000000  DATAGEN_DEVICES_ITEMS_PER_JOB=10000000 DATAGEN_DEVICES_PARALLELISM=100 STACK_NAME=${STACK_NAME}
+       make aerospike@datagen DATAGEN_CONCURRENCY=32 DATAGEN_ITEMS_PER_JOB=10000  DATAGEN_DEVICES_ITEMS_PER_JOB=100000 DATAGEN_DEVICES_PARALLELISM=30 STACK_NAME=${STACK_NAME}
     else
       make dynamodb@datagen DATAGEN_CONCURRENCY=1 DATAGEN_ITEMS_PER_JOB=1000  DATAGEN_DEVICES_ITEMS_PER_JOB=1000 DATAGEN_DEVICES_PARALLELISM=1 STACK_NAME=${STACK_NAME}
     fi
 fi
 
-## Deploy the bidderapp
+# Deploy the bidderapp
 export BIDDER_OVERLAY_TEMP=$(mktemp)
 envsubst < deployment/infrastructure/deployment/bidder/overlay-codekit-${VARIANT,,}.yaml.tmpl >${BIDDER_OVERLAY_TEMP}
 make eks@deploybidder VALUES=${BIDDER_OVERLAY_TEMP}

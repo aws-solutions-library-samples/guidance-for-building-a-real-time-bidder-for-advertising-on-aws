@@ -45,6 +45,7 @@ func (h Handler) HandleRequest(ctx *fasthttp.RequestCtx) {
 	// Using deadline instead of context.WithTimeout to try to save
 	// heap allocations. Possibly not all bidrequests will require async
 	// operations and in those cases context allocation can be spared.
+	log.Info().Msg("Received request")
 	deadline := time.Now().Add(h.cfg.Timeout)
 
 	metrics.BidRequestReceivedN.Inc()
@@ -65,11 +66,13 @@ func (h Handler) HandleRequest(ctx *fasthttp.RequestCtx) {
 	// We have a valid bid request, so put it to the data stream. (We need its ID as a partition key; invalid bid
 	// requests are unlikely to be useful when processing the stream.)
 	if err := h.dataStream.PutRequest(byteRequest); err != nil {
-		log.Error().Err(errors.Wrap(err, "error while streaming request")).Msg("")
+		log.Error().Err(errors.Wrap(err, "error while streaming request")).Msg("Error streaming to kinesis")
 	}
 
+	log.Info().Msg("Received request")
 	response := auction.Response{}
 	err := h.auction.Run(deadline, request, &response)
+	log.Info().Msg("Received request")
 	if err != nil {
 		h.writeResponseError(err, ctx)
 		return

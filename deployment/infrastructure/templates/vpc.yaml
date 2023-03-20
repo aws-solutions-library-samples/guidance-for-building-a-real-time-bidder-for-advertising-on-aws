@@ -10,22 +10,22 @@ Parameters:
 
   Subnet01Block:
     Type: String
-    Default: 192.168.64.0/24
+    Default: 192.168.64.0/20
     Description: CidrBlock for subnet 01 within the VPC
 
   Subnet02Block:
     Type: String
-    Default: 192.168.65.0/24
+    Default: 192.168.96.0/20
     Description: CidrBlock for subnet 02 within the VPC
 
   Subnet03Block:
     Type: String
-    Default: 192.168.66.0/24
+    Default: 192.168.112.0/20
     Description: CidrBlock for subnet 03 within the VPC. This is used only if the region has more than 2 AZs.
   
   Subnet04Block:
     Type: String
-    Default: 192.168.67.0/24
+    Default: 192.168.128.0/20
     Description: Public Subnet, CidrBlock for subnet 04 within the VPC. This is used only if the region has more than 2 AZs.
 
   EksClusterName:

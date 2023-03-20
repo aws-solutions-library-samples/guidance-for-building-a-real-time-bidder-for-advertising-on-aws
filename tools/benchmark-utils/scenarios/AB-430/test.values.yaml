@@ -1,6 +1,6 @@
 replicaCount: 190
 
 config:
-  KINESIS_DISABLE: "true"
+  KINESIS_DISABLE: "false"
   DAX_ENABLE: "true"
   BUDGET_SYNC_DISABLE: "true"

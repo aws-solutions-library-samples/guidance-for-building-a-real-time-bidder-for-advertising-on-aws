@@ -186,18 +186,18 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 2000m
+    memory: 6000Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 2000m
+    memory: 6000Mi
 
 hpa:
   # Use Horizontal Pod Autoscaler
   enabled: false
 
   replicas:
-    min: 1
+    min: 30
     max: 120
 
   metrics: []

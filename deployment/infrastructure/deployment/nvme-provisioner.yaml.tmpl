@@ -21,7 +21,7 @@ spec:
 
       containers:
         - name: nvme-provisioner
-          image: ${AWS_PUBLIC_ECR_REGISTRY}/${AWS_PUBLIC_IMAGE_PREFIX}nvme-provisioner:${IMAGE_TAG}
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${AWS_ECR_NVME}:${IMAGE_TAG}
           imagePullPolicy: Always
           securityContext:
             privileged: true

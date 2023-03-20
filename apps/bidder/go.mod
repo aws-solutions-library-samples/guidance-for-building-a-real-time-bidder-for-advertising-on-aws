@@ -16,7 +16,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/kinesis v1.1.1
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
-	github.com/golang/protobuf v1.4.3
+	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.4
 	github.com/gorilla/mux v1.8.0
 	github.com/jpillora/backoff v1.0.0
@@ -33,14 +33,42 @@ require (
 	github.com/valyala/fasttemplate v1.2.1
 	go.uber.org/atomic v1.7.0
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
-	google.golang.org/protobuf v1.26.0-rc.1
-	gvisor.dev/gvisor v0.0.0-20210403071834-9a8692c82ac5
+	google.golang.org/protobuf v1.28.2-0.20230118093459-a9481185b34d
+	gvisor.dev/gvisor v0.0.0-20230228024301-802c800ebcce
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.1.1 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.0.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.1.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.0.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.0.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.1.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.1.1 // indirect
+	github.com/aws/smithy-go v1.1.0 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/klauspost/compress v1.15.0 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.3 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
+	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

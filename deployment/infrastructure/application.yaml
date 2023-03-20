@@ -70,8 +70,8 @@ Mappings:
       DaxScaleOutEvaluationMinutes: '2'
       SingleAZ: '1'
 
-      KinesisBenchmarkMinShardCount: '512'
-      KinesisBenchmarkMaxShardCount: '512'
+      KinesisBenchmarkMinShardCount: '2048'
+      KinesisBenchmarkMaxShardCount: '2048'
 
       KinesisBenchmarkScaleOutUtilization: '80'
       KinesisBenchmarkScaleInUtilization: '50'

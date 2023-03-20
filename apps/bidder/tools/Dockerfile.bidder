@@ -1,11 +1,12 @@
 ARG REGISTRY
 ARG IMAGE_PREFIX
-FROM ${REGISTRY}/${IMAGE_PREFIX}golang:1.16-alpine AS builder
+FROM ${REGISTRY}/${IMAGE_PREFIX}golang:1.20-alpine AS builder
 
 RUN apk add gcc musl-dev make
 
 WORKDIR /code
 COPY go.mod go.sum /code/
+RUN go clean -modcache
 RUN go mod download
 # Rebuild libzstd.a: due to the limitations of the Go build system, <https://github.com/valyala/gozstd/issues/20>,
 # gozstd has to include that library prebuilt (for a specific libc) to work with go get.

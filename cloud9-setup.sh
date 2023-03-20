@@ -29,7 +29,7 @@ export APPLICATION_STACK_NAME=`aws cloudformation list-exports --query "Exports[
 export CODEBUILD_STACK_NAME=`aws cloudformation describe-stacks --stack-name ${ROOT_STACK} --output json | jq '.Stacks[].Outputs[] | select(.OutputKey=="CodebuildStackARN") | .OutputValue' | cut -d/ -f2`
 export EKS_WORKER_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Name=='EKSWorkerRoleARN'].Value" --output text`
 export EKS_ACCESS_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Name=='EKSAccessRoleARN'].Value" --output text`
-export STACK_NAME=$APPLICATION_STACK_NAME
+export STACK_NAME=$ROOT_STACK
 
 echo "You might need to update the aws cli configuration to use an existing permanent role if the Cloud9 temperory credentials dont work"
 
@@ -57,4 +57,4 @@ make benchmark@run TIMEOUT=100ms NUMBER_OF_JOBS=1 RATE_PER_JOB=200 NUMBER_OF_DEV
 # ENABLE_PROFILER=1    # used to start profiling session, leave unset to disable
 
 # open graphana
-kubectl port-forward svc/prom-grafana 8080:80
+#kubectl port-forward svc/prom-grafana 8080:80
