@@ -109,7 +109,7 @@ git push
 ```
 12. Now your pipeline will be triggered and the Real-Time-Bidding Solution will start deploying on your AWS Account and eventually you will see that the CodePipeline is sucessful.
 
-![Build Success](./images/BuildSuccess.png)
+![Build Success](./images/buildsuccess.png)
 
 13. Once the deployment is completed go to the cloudformation console and navigate to root stack (this will be the stack with name that you have provided in cdk.json file in step 4). Go to Outputs tab and copy `ApplicationStackName`, `ApplicationStackARN`, `EKSAccessRoleARN`, `EKSWorkerRoleARN`, `Cloud9IDE-URL`, and `Cloud9EnvID`. We will be using them in next steps.
 
