@@ -196,7 +196,7 @@ ENABLE_PROFILER=1    # used to start profiling session, leave unset to disable
 ```
 kubectl port-forward svc/prom-grafana 8080:80
 ```
-27. On your cloud9 instance click and preview button on the top to open a browser window/tab and access Grafana Dashboard. Use the following credentials to login
+27. On your cloud9 instance click and preview button on the top to open a browser window/tab and access Grafana Dashboard. Use the following credentials to login (Turn off enhanced tracking off if you are using Firefox)
 
 ```
 username: admin
