@@ -1,3 +1,5 @@
+# Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys AWS CodeCommit, CodeBuild and CodePipeline
+
 from aws_cdk import (
     core as cdk,
     aws_codecommit as cc,

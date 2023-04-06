@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster'
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys Amazon EKS Cluster
 
 Parameters:
   EksClusterName:

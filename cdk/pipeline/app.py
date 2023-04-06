@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import os
-
 from aws_cdk import core as cdk
-
+#Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys AWS CodeCommit, CodeBuild and CodePipeline
 # For consistency with TypeScript code, `cdk` is the preferred import name for
 # the CDK's core module.  The following line also imports it as `core` for use
 # with examples from the CDK Developer's Guide, which are in the process of

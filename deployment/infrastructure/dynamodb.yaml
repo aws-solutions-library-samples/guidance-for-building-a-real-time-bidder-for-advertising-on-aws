@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: DynamoDB tables
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Template to deploy DynamoDB tables
 
 Parameters:
   Variant:

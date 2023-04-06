@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS VPC - Public subnets only'
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys VPC for EKS cluster
 
 Parameters:
   VpcBlock:

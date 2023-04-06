@@ -1,4 +1,4 @@
-Description: AWS Kinesis stack
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys AWS Kinesis stack
 
 Parameters:
   BucketName:

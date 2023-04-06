@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: DynamoDB table autoscaling
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). DynamoDB table autoscaling
 
 Parameters:
   TableName:

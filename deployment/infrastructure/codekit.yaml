@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Bidder codekit resources
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). This template is root stack which will deploy ECR repository, IAM Roles for EKS and application.yaml template.
 
 Parameters:
   Variant:
