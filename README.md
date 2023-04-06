@@ -109,7 +109,7 @@ git push
 ```
 12. Now your pipeline will be triggered and the Real-Time-Bidding Solution will start deploying on your AWS Account and eventually you will see that the CodePipeline is sucessful.
 
-![Build Success](./images/BuildSuccess.png)
+![Build Success](./images/buildsuccess.png)
 
 13. Once the deployment is completed go to the cloudformation console and navigate to root stack (this will be the stack with name that you have provided in cdk.json file in step 4). Go to Outputs tab and copy `ApplicationStackName`, `ApplicationStackARN`, `EKSAccessRoleARN`, `EKSWorkerRoleARN`, `Cloud9IDE-URL`, and `Cloud9EnvID`. We will be using them in next steps.
 
@@ -196,7 +196,7 @@ ENABLE_PROFILER=1    # used to start profiling session, leave unset to disable
 ```
 kubectl port-forward svc/prom-grafana 8080:80
 ```
-27. On your cloud9 instance click and preview button on the top to open a browser window/tab and access Grafana Dashboard. Use the following credentials to login
+27. On your cloud9 instance click and preview button on the top to open a browser window/tab and access Grafana Dashboard. Use the following credentials to login (Turn off enhanced tracking off if you are using Firefox)
 
 ```
 username: admin
