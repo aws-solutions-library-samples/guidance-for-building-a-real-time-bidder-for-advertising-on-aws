@@ -27,7 +27,7 @@ The Real-Time Bidder Solution on AWS consist of 5 modules:
 * [AWS CLI V2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 * [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#:~:text=The%20actual%20package%20name%20of%20the%20main%20CDK%20package%20varies%20by%20language.) 
 
-2. As part of the deployment the solution will also create an isolated VPC and Cloud9 instance to access EKS clsuter and Grafana dashboards. You need to install the following on the cloud9 instances to run the benchmarks.
+2. As part of the deployment the solution will also create an isolated VPC and Cloud9 instance to access EKS cluster and Grafana dashboards. You need to install the following on the cloud9 instances to run the benchmarks.
 * [Helm 3.8.2](https://helm.sh/)
 * [kubectl 1.21.0](https://kubernetes.io/docs/tasks/tools/#kubectl)
 * [JQ](https://stedolan.github.io/jq/download/)
@@ -52,7 +52,7 @@ You can increase the following limits via service quota portal in AWS Console.
 ## Deployment
 
 1.	Download the code as Zip file and unzip the file `aws-real-time-bidder`
-2.  Open terminal on your loacal machine and configure your AWS credentials (Secret ID and Token), region and output using the following command
+2.  Open terminal on your local machine and configure your AWS credentials (Secret ID and Token), region and output using the following command
 ```
 aws configure
 ```
@@ -119,7 +119,7 @@ aws cloud9 create-environment-membership --environment-id <Environment ID> --use
 ```
 >Note: If the cloud9 deployment fails or doesnt create an instance, use the [cloud9.yaml file](./deployment/infrastructure//templates/cloud9.yaml) to manually deploy the cloud9 instance
 
-15. Access the Cloud9 IDE using the URL that you have copied from step 13. Deploy the pre-requisits (`Helm`, `Kubectl`and `jq`) on the Cloud9 Instance as mentioned in the prereqisits session.
+15. Access the Cloud9 IDE using the URL that you have copied from step 13. Deploy the pre-requisites (`Helm`, `Kubectl`and `jq`) on the Cloud9 Instance as mentioned in the prerequisites session.
 >Tip: Commands for steps 15 - 26 are inlcuded in a shell script [cloud9-setup.sh](./cloud9-setup.sh) and is accessible from the code repo copy that gets pulled down automatically when you lauch the Cloud9 instance created by the stack. Navigate to the directory and change the script permissions `chmod 700 cloud9-setup.sh` before executing the script.
 16. In the cloud9 terminal, clone the CodeCommit repo as you have done in step 10. 
 
