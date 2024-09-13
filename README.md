@@ -1,5 +1,7 @@
 # RTB Codekit Deployment Guide
 
+**Important**: This Guidance requires the use of AWS CodeCommit, which is no longer available to new customers. Existing customers of AWS CodeCommit can continue using and deploying this Guidance as normal.
+
 ## Introduction
 
 Real-time advertising platforms running bidding, ad serving, and verification workloads operate at ultra-low latency with throughput in the millions of transactions per second —24 hours a day. The scale of advertising technology (ad tech) platform request volume is so large that customers often measure infrastructure costs on unit basis per billion requests. Infrastructure costs for compute, databases, and networking also directly affect profit margins in ad tech—creating a strong incentive for customers to optimize price-performance.
