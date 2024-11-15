@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -13,232 +16,274 @@
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 27,
-  "iteration": 1615552904635,
   "links": [],
   "panels": [
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "cloudwatch",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "P561CB7FAE9DC47C2"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 13,
         "w": 12,
         "x": 0,
         "y": 0
       },
-      "hiddenSeries": false,
       "id": 2,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.3.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Hits",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "P561CB7FAE9DC47C2"
+          },
           "dimensions": {
             "ClusterId": "$ClusterId"
           },
           "expression": "",
           "id": "",
+          "label": "Hits",
           "matchExact": true,
+          "metricEditorMode": 0,
           "metricName": "ItemCacheHits",
+          "metricQueryType": 0,
           "namespace": "AWS/DAX",
           "period": "",
           "refId": "A",
           "region": "default",
-          "statistics": [
-            "Sum"
-          ]
+          "statistic": "Sum"
         },
         {
           "alias": "Missies",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "P561CB7FAE9DC47C2"
+          },
           "dimensions": {
             "ClusterId": "$ClusterId"
           },
           "expression": "",
           "id": "",
+          "label": "Missies",
           "matchExact": true,
+          "metricEditorMode": 0,
           "metricName": "ItemCacheMisses",
+          "metricQueryType": 0,
           "namespace": "AWS/DAX",
           "period": "",
           "refId": "B",
           "region": "default",
-          "statistics": [
-            "Sum"
-          ]
+          "statistic": "Sum"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Item cache hits/misses",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transformations": [],
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "cloudwatch",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "P561CB7FAE9DC47C2"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 13,
         "w": 12,
         "x": 12,
         "y": 0
       },
-      "hiddenSeries": false,
       "id": 3,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.3.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "alias": "Hits",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "P561CB7FAE9DC47C2"
+          },
           "dimensions": {
             "ClusterId": "$ClusterId"
           },
           "expression": "",
           "id": "",
+          "label": "Hits",
           "matchExact": true,
+          "metricEditorMode": 0,
           "metricName": "ItemCacheHits",
+          "metricQueryType": 0,
           "namespace": "AWS/DAX",
           "period": "",
           "refId": "A",
           "region": "default",
-          "statistics": [
-            "Sum"
-          ]
+          "statistic": "Sum"
         },
         {
           "alias": "Missies",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "P561CB7FAE9DC47C2"
+          },
           "dimensions": {
             "ClusterId": "$ClusterId"
           },
           "expression": "",
           "id": "",
+          "label": "Missies",
           "matchExact": true,
+          "metricEditorMode": 0,
           "metricName": "ItemCacheMisses",
+          "metricQueryType": 0,
           "namespace": "AWS/DAX",
           "period": "",
           "refId": "B",
           "region": "default",
-          "statistics": [
-            "Sum"
-          ]
+          "statistic": "Sum"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Item cache hits/misses ratio",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
       "transformations": [
         {
           "id": "calculateField",
@@ -303,58 +348,29 @@
           }
         }
       ],
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "percentunit",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     }
   ],
   "refresh": "1m",
-  "schemaVersion": 26,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
       {
         "allValue": "",
         "current": {
+          "isNone": true,
           "selected": false,
-          "text": "",
+          "text": "None",
           "value": ""
         },
-        "datasource": "cloudwatch",
+        "datasource": {
+          "type": "cloudwatch",
+          "uid": "P561CB7FAE9DC47C2"
+        },
         "definition": "dimension_values(default,AWS/DAX,ItemCacheHits,ClusterId)",
-        "error": null,
         "hide": 0,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "ClusterId",
         "options": [],
@@ -364,8 +380,6 @@
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "Name",
         "type": "query",
         "useTags": false
       }
@@ -379,5 +393,6 @@
   "timezone": "",
   "title": "AWS DAX",
   "uid": "dax",
-  "version": 1
+  "version": 1,
+  "weekStart": ""
 }

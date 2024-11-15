@@ -61,7 +61,7 @@ magnumClusterName: ""
 magnumCABundlePath: "/etc/kubernetes/ca-bundle.crt"
 
 # cloudConfigPath -- Configuration file for cloud provider.
-cloudConfigPath: /etc/gce.conf
+# cloudConfigPath: /etc/gce.conf
 
 # cloudProvider -- The cloud provider where the autoscaler runs.
 # Currently only `gce`, `aws`, `azure` and `magnum` are supported.
@@ -153,9 +153,9 @@ fullnameOverride: ""
 
 image:
   # image.repository -- Image repository
-  repository: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler
+  repository: registry.k8s.io/autoscaling/cluster-autoscaler
   # image.tag -- Image tag
-  tag: v1.20.0
+  tag: v1.30.2
   # image.pullPolicy -- Image pull policy
   pullPolicy: IfNotPresent
   ## Optionally specify an array of imagePullSecrets.

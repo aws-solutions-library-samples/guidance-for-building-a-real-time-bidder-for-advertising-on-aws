@@ -315,7 +315,6 @@ Resources:
 #        Path: /service-role/
 #        ManagedPolicyArns:
 #          - arn:aws:iam::aws:policy/AWSCloud9SSMInstanceProfile
-#          - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
 #        AssumeRolePolicyDocument: |
 #          {
 #            "Version": "2012-10-17",
@@ -355,7 +354,7 @@ Resources:
 #        - - !Ref RootStackName
 #          - '-cloud9Instance' 
 #      Repositories: 
-#        - RepositoryUrl: https://git-codecommit.us-west-2.amazonaws.com/v1/repos/RTBCodeKitRepo
+#        - RepositoryUrl: https://github.com/owner/aws-rtbkit
 #          PathComponent: /RTBCodeKitRepo
 #      SubnetId: !Ref Subnet04
 
@@ -368,7 +367,7 @@ Outputs:
         - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
         - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02 ] ]
   SubnetId:
-    Description: cloud9 subnet id
+    Description: subnet id
     Value: !Ref Subnet04
 
   VpcId:
@@ -386,11 +385,3 @@ Outputs:
   PrivateRouteTableId:
     Description: Route table Id
     Value: !Ref PrivateRouteTable
-  
-#  Cloud9IDEURL:
-#    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/${C9Instance}?region=${AWS::Region}=
-#
-#  Cloud9EnvID:
-#    Description: cloud9 instance enevironment ID
-#    Value: !Ref C9Instance
-    

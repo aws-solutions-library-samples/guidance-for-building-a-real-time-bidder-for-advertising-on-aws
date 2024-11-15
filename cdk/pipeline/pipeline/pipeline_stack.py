@@ -1,106 +1,107 @@
-# Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys AWS CodeCommit, CodeBuild and CodePipeline
-
+# Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). Deploys AWS CodeBuild and CodePipeline that in turn deploys the CFN templates with infra and bidder application on EKS
+import os
 from aws_cdk import (
-    core as cdk,
-    aws_codecommit as cc,
+    Stack,
     aws_codebuild as cb,
     aws_codepipeline as cp,
     aws_codepipeline_actions as cpa,
     aws_iam as iam,
-    pipelines as pp
+    SecretValue
 )
+from constructs import Construct
+class PipelineStack(Stack):
 
-
-# class PipelineStage(cdk.Stage):
-
-#     def __init__(self, scope: cdk.Construct, id: str, **kwargs):
-#         super().__init__(scope, id, **kwargs)
-
-#         service = PypipworkshopStack(self, 'WebService')
-
-
-
-class PipelineStack(cdk.Stack):
-
-    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, stage: str="dev" , **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        stage = self.node.try_get_context("stage")
+        acc = os.getenv("CDK_DEFAULT_ACCOUNT")
+        reg = os.getenv("CDK_DEFAULT_REGION")
+
+        # Get environment-specific context
+        env_context = self.node.try_get_context(stage)
+        shared_context = self.node.try_get_context('shared')
         
-        if not stage:
-            stage = "dev"
-            
-        stage_env_vars = self.node.try_get_context(stage)
+        if not shared_context["REPO_OWNER"]:
+            repo_owner = "aws-solutions-library-samples"
+        else:
+            repo_owner = shared_context["REPO_OWNER"]
 
-        repo = cc.Repository(
-            self, 'RTBCodeKit',
-            repository_name="RTBCodeKitRepo"
+        if not shared_context["REPO_NAME"]:
+            repo_name = "guidance-for-building-a-real-time-bidder-for-advertising-on-aws"
+        else:
+            repo_name = shared_context["REPO_NAME"]
+
+        if not shared_context["ROOT_STACK_NAME"]:
+            root_stack_name = "aws-rtbkit"
+        else:
+            # fix for issue #59 - Bucket name that prefixes stack name needs to be lowercase
+            # and cannot have underscores
+            root_stack_name = shared_context["ROOT_STACK_NAME"].lower().replace("_", "-")
+        
+        if not shared_context["STACK_VARIANT"]:
+            stack_variant = "DynamoDB"
+        else:
+            stack_variant = shared_context["STACK_VARIANT"]
+        
+        if not env_context["REPO_BRANCH"]:
+            repo_branch = "main"
+        else:
+            repo_branch = env_context["REPO_BRANCH"]
+        
+        if not env_context["GITHUB_TOKEN_SECRET_ID"]:
+            secret_id = "rtbkit-github-token"
+        else:
+            secret_id = env_context["GITHUB_TOKEN_SECRET_ID"]
+
+        # fix for issue #79 code commit deprecation
+        # the solution now points to the opensource github repo by default
+        # customers can update their repo configurations through context variables
+        # To provide GitHub credentials, please either go to AWS CodeBuild Console to connect or call ImportSourceCredentials to persist your personal access token. Example:
+        # aws codebuild import-source-credentials --server-type GITHUB --auth-type PERSONAL_ACCESS_TOKEN --token <token_value>
+        cb_source = cb.Source.git_hub(
+            owner=repo_owner,
+            repo=repo_name,
+            webhook=True,
+            webhook_triggers_batch_build=True,
+            webhook_filters=[
+                cb.FilterGroup.in_event_of(cb.EventAction.PUSH).and_branch_is(repo_branch).and_commit_message_is("the commit message"),
+                # cb.FilterGroup.in_event_of(cb.EventAction.RELEASED).and_branch_is(repo_branch)
+            ]
         )
-
-        cb_source = cb.Source.code_commit(repository=repo)
-
         # Defines the artifact representing the sourcecode
         source_artifact = cp.Artifact()
         # Defines the artifact representing the cloud assembly
         # (cloudformation template + all other assets)
         cloud_assembly_artifact = cp.Artifact()
 
-        # Generates the source artifact from the repo we created in the last step
-        source_action=cpa.CodeCommitSourceAction(
-            action_name='CodeCommit', # Any Git-based source control
-            output=source_artifact, # Indicates where the artifact is stored
-            repository=repo # Designates the repo to draw code from
+        source_action=cpa.GitHubSourceAction(
+            action_name='GitHubSourceAction', 
+            owner=repo_owner,
+            repo=repo_name,
+            oauth_token=SecretValue.secrets_manager(secret_id),
+            output=source_artifact,
+            branch=repo_branch
         )
 
-        rtb_pipeline_role = iam.Role(self, id="rtbkit_codebuild_role",
+        rtb_pipeline_role = iam.Role(self, id="rtbkit_codebuild_role", role_name="rtbkit_codebuild_role",
             assumed_by=iam.CompositePrincipal(
                 iam.ServicePrincipal('codebuild.amazonaws.com'),
                 iam.ServicePrincipal('codepipeline.amazonaws.com'),
             ),
-            description=None,
-            external_id=None,
-            external_ids=None,
-            inline_policies=None,
-            managed_policies=None,
-            max_session_duration=None,
-            path="/rtbkit/",
-            permissions_boundary=None,
-            role_name=None,
+            path="/rtbkit/"
         )
         # Fix for issue #61
-        # admin_policy = iam.ManagedPolicy.from_managed_policy_arn(
-        #     scope=self,
-        #     id="rtbkit_admin_policy",
-        #     managed_policy_arn={"arn:aws:iam::aws:policy/AdministratorAccess",
-        #                         "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
-        #                         "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-        #                         "arn:aws:iam::aws:policy/AmazonKinesisFullAccess",
-        #                         "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-        #                         "arn:aws:iam::aws:policy/AmazonVPCFullAccess",
-        #                         "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess",
-        #                         "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"}
-        # )
-
-        # rtb_pipeline_role.add_managed_policy(admin_policy)
         rtb_pipeline_role = self.add_managed_policies(rtb_pipeline_role)
 
         cb_project=cb.Project(self, "RTBPipelineProject",
             environment={
-                # "compute-type":
-                # "build_image": cb.LinuxBuildImage.from_code_build_image_id("aws/codebuild/standard:5.0"),
-                "build_image": cb.LinuxBuildImage.from_code_build_image_id("aws/codebuild/amazonlinux2-aarch64-standard:2.0"),
-                # optional certificate to include in the build image
-                # "certificate": {
-                #     "bucket": s3.Bucket.from_bucket_name(self, "Bucket", "my-bucket"),
-                #     "object_key": "path/to/cert.pem"
-                # }
+                "build_image": cb.LinuxBuildImage.AMAZON_LINUX_2_ARM_3,
                 "privileged": True,
             },
             environment_variables={
-                "AWS_ACCOUNT_ID": cb.BuildEnvironmentVariable(value=stage_env_vars['AWS_ACCOUNT_ID']),
-                # fix for issue #59 - Bucket name needs to be lowercase
-                "RTBKIT_ROOT_STACK_NAME": (cb.BuildEnvironmentVariable(value=stage_env_vars['RTBKIT_ROOT_STACK_NAME'].lower().replace("_", "-"))),
-                "RTBKIT_VARIANT": cb.BuildEnvironmentVariable(value=stage_env_vars['RTBKIT_VARIANT']),
+                "AWS_ACCOUNT_ID": cb.BuildEnvironmentVariable(value=acc),
+                "RTBKIT_ROOT_STACK_NAME": (cb.BuildEnvironmentVariable(value=root_stack_name)),
+                "RTBKIT_VARIANT": cb.BuildEnvironmentVariable(value=stack_variant),
             },
             source=cb_source,
             role=rtb_pipeline_role,
@@ -136,32 +137,6 @@ class PipelineStack(cdk.Stack):
 
         cfn_build = cb_project.node.default_child
         cfn_build.add_override("Properties.Environment.Type", "ARM_CONTAINER")
-        
-        # cfn_codebuild = cb_project.node.default_child
-        # cfn_codebuild.add_deletion_override("Properties.ServiceRole")
-
-            # cloud_assembly_artifact=cloud_assembly_artifact,
-
-            # # Builds our source code outlined above into a could assembly artifact
-            # synth_action=pp.ShellScriptAction(
-            #     action_name="Build",
-            #     # build_spec="buildspec.yml"
-            #     additional_artifacts=[
-            #             source_artifact,
-            #     ],
-            #     commands=[
-            #         "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash",
-            #         "echo \"installed helm\"",
-            #         'export DOCKER_CLI_EXPERIMENTAL=enabled',
-            #         'echo "Starting build `date` in `pwd`',
-            #     #    'chmod +x ./initialize-repo.sh && ./initialize-repo.sh <Account ID> ${REGION} ${STACK_NAME} ${VARIANT} yes yes',
-            #         'chmod +x ./initialize-repo.sh && ./initialize-repo.sh 504382435436 us-east-1 rtb-bidder-stack-1006 DynamoDB yes yes',
-            #         'echo "Build completed `date`"',
-            #     ],
-            # )
-
-        # deploy = RTBPipelineStage(self, 'Deploy')
-        # pp.add_application_stage(deploy)
     
     # fix for issue #61
     def add_managed_policies(self, iamrole: iam.Role) -> iam.Role:

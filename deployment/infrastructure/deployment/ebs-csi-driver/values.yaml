@@ -5,29 +5,29 @@
 replicaCount: 1
 
 image:
-  repository: k8s.gcr.io/provider-aws/aws-ebs-csi-driver
-  tag: "v0.9.0"
+  repository: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver
+  tag: "v1.30.0"
   pullPolicy: IfNotPresent
 
 sidecars:
   provisionerImage:
-    repository: k8s.gcr.io/sig-storage/csi-provisioner
-    tag: "v2.0.2"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner
+    tag: "v4.0.1-eks-1-30-4"
   attacherImage:
-    repository: k8s.gcr.io/sig-storage/csi-attacher
-    tag: "v3.0.0"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher
+    tag: "v4.5.1-eks-1-30-4"
   snapshotterImage:
-    repository: k8s.gcr.io/sig-storage/csi-snapshotter
-    tag: "v3.0.3"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter
+    tag: "v7.0.2-eks-1-30-4"
   livenessProbeImage:
-    repository: k8s.gcr.io/sig-storage/livenessprobe
-    tag: "v2.2.0"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe
+    tag: "v2.12.0-eks-1-30-4"
   resizerImage:
-    repository: k8s.gcr.io/sig-storage/csi-resizer
-    tag: "v1.0.0"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer
+    tag: "v1.10.1-eks-1-30-4"
   nodeDriverRegistrarImage:
-    repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
-    tag: "v2.0.1"
+    repository: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar
+    tag: "v2.10.1-eks-1-30-4"
 
 snapshotController:
   repository: k8s.gcr.io/sig-storage/snapshot-controller

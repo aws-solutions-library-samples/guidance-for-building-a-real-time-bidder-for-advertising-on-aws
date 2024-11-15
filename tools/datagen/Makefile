@@ -29,11 +29,13 @@ clean:
 .PHONY: image
 image: CONTEXT_DIR ?= $(_PWD)
 image:
-	echo $(CONTEXT_DIR) && \
-    docker build --no-cache -t $(DATAGEN_IMAGE_TAG) -f $(CONTEXT_DIR)/Dockerfile --build-arg IMAGE_PREFIX=$(AWS_PUBLIC_IMAGE_PREFIX) --build-arg REGISTRY=$(AWS_PUBLIC_ECR_REGISTRY) $(CONTEXT_DIR)
+# Adding push to the command to fix pipeline errors
+	echo $(CONTEXT_DIR) && echo $(DATAGEN_IMAGE_TAG) && \
+    docker build --push --no-cache -t $(DATAGEN_IMAGE_TAG) -f $(CONTEXT_DIR)/Dockerfile --build-arg IMAGE_PREFIX=$(AWS_PUBLIC_IMAGE_PREFIX) --build-arg REGISTRY=$(AWS_PUBLIC_ECR_REGISTRY) $(CONTEXT_DIR)
 .PHONY: push
+push: CONTEXT_DIR ?= $(_PWD)
 push:
-	docker push $(DATAGEN_IMAGE_TAG)
+	echo $(CONTEXT_DIR) && docker image ls && docker push $(DATAGEN_IMAGE_TAG)
 
 datagen@tag-latest:
 	docker tag $(AWS_ECR_REGISTRY)/$(APP):$(DATAGEN_IMAGE_VERSION) $(AWS_ECR_REGISTRY)/$(APP):latest
@@ -92,7 +94,8 @@ datagen@image:  ## Builds docker image with datagen tool
 	$(MAKE) -C $(_APP_DIR) image
 
 datagen@push: ## Pushes docker image with datagen tool
-datagen@push: push
+datagen@push: 
+	$(MAKE) -C $(_APP_DIR) push
 
 datagen@ci:  ## Run linters and tests for the datagen tool
 	$(MAKE) -C $(_APP_DIR) lint.docker test.docker

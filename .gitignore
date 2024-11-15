@@ -1,0 +1,4 @@
+.DS_Store
+.venv
+cdk.context.json
+.vscode

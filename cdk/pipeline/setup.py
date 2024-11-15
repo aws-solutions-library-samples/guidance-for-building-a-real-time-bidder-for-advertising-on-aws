@@ -7,37 +7,31 @@ with open("README.md") as fp:
 
 setuptools.setup(
     name="pipeline",
-    version="0.0.1",
+    version="0.0.2",
 
-    description="An empty CDK Python app",
+    description="RTB Code kit CDK code build pipeline",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
-    author="author",
+    author="AWS AMT TFC",
 
     package_dir={"": "pipeline"},
     packages=setuptools.find_packages(where="pipeline"),
 
     install_requires=[
-        "aws-cdk.core==1.123.0",
+        "aws-cdk-lib==2.149.0",
+        "cdk-nag==2.28.195"
     ],
 
-    python_requires=">=3.6",
+    python_requires=">=3.9",
 
     classifiers=[
         "Development Status :: 4 - Beta",
-
         "Intended Audience :: Developers",
-
         "Programming Language :: JavaScript",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-
         "Topic :: Software Development :: Code Generators",
         "Topic :: Utilities",
-
         "Typing :: Typed",
     ],
 )

@@ -1,0 +1,12 @@
+{
+    "dev": {
+        "REPO_BRANCH":"main",
+        "GITHUB_TOKEN_SECRET_ID": "rtbkit-github-token"
+    },
+    "shared": {
+        "ROOT_STACK_NAME": "aws-rtbkit",
+        "STACK_VARIANT": "DynamoDB",
+        "REPO_OWNER":"",
+        "REPO_NAME":""
+    }
+}

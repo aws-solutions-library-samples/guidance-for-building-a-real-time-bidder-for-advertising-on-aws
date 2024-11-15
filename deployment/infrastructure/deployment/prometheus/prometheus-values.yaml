@@ -46,7 +46,8 @@ defaultRules:
     kubernetesResources: true
     kubernetesStorage: true
     kubernetesSystem: true
-    kubeScheduler: true
+    kubeSchedulerAlerting: true
+    kubeSchedulerRecording: true
     kubeStateMetrics: true
     network: true
     node: true
@@ -369,7 +370,8 @@ alertmanager:
     ## Image of Alertmanager
     ##
     image:
-      repository: quay.io/prometheus/alertmanager
+      registry: quay.io
+      repository: prometheus/alertmanager
       tag: v0.21.0
       sha: ""
 
@@ -561,7 +563,7 @@ alertmanager:
 
     ## PortName to use for Alert Manager.
     ##
-    portName: "web"
+    portName: "http-web"
 
     ## ClusterAdvertiseAddress is the explicit address to advertise in cluster. Needs to be provided for non RFC1918 [1] (public) addresses. [1] RFC1918: https://tools.ietf.org/html/rfc1918
     ##
@@ -629,7 +631,11 @@ grafana:
       ## Annotations for Grafana dashboard configmaps
       ##
       annotations: {}
-      multicluster: false
+      multicluster:
+        global:
+          enabled: false
+        etcd:
+          enabled: false
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
@@ -676,7 +682,7 @@ grafana:
   ## Passed to grafana subchart and used by servicemonitor below
   ##
   service:
-    portName: service
+    portName: http-web
 
   ## If true, create a serviceMonitor for grafana
   ##
@@ -1444,23 +1450,26 @@ prometheusOperator:
   ## Prometheus-operator image
   ##
   image:
-    repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.44.0
+    registry: quay.io
+    repository: prometheus-operator/prometheus-operator
+    tag: v0.74.0
     sha: ""
     pullPolicy: IfNotPresent
 
   ## Configmap-reload image to use for reloading configmaps
   ##
   configmapReloadImage:
-    repository: docker.io/jimmidyson/configmap-reload
+    registry: docker.io
+    repository: jimmidyson/configmap-reload
     tag: v0.4.0
     sha: ""
 
   ## Prometheus-config-reloader image to use for config and rule reloading
   ##
   prometheusConfigReloaderImage:
-    repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.44.0
+    registry: quay.io
+    repository: prometheus-operator/prometheus-config-reloader
+    tag: v0.74.0
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1736,8 +1745,9 @@ prometheus:
     ## Image of Prometheus.
     ##
     image:
-      repository: quay.io/prometheus/prometheus
-      tag: v2.22.1
+      registry: quay.io
+      repository: prometheus/prometheus
+      tag: v2.49.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -2130,7 +2140,7 @@ prometheus:
 
     ## PortName to use for Prometheus.
     ##
-    portName: "web"
+    portName: "http-web"
 
     ## ArbitraryFSAccessThroughSMs configures whether configuration based on a service monitor can access arbitrary files
     ## on the file system of the Prometheus container e.g. bearer token files.

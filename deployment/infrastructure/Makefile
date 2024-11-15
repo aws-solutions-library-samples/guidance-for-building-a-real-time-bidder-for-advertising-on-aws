@@ -126,6 +126,7 @@ eks@provision-codekit-aerospike: eks@provision-nvme
 eks@provision-codekit-dynamodb: eks@update-dashboards ## Provision basic services to EKS cluster
 eks@provision-codekit-dynamodb: eks@provision-prometheus
 eks@provision-codekit-dynamodb: eks@provision-prometheus-adapter
+eks@provision-codekit-dynamodb: eks@provision-ebs-csi
 
 eks@update-dashboards: ## Update Grafana dashboards on EKS
 	kubectl apply -k deployment/infrastructure/deployment/prometheus/dashboards
@@ -136,7 +137,7 @@ eks@provision-external-dns: ## Provision External DNS
 eks@provision-prometheus: ## Provision Prometheus stack, adding a timeout parameter for resiliency
 	helm repo add --force-update prometheus-community https://prometheus-community.github.io/helm-charts
 	helm upgrade --install \
-		--version 15.1.3 \
+		--version 59.0 \
 		prom prometheus-community/kube-prometheus-stack \
 		-f deployment/infrastructure/deployment/prometheus/prometheus-values.yaml \
 		--timeout 10m30s --debug
@@ -144,14 +145,14 @@ eks@provision-prometheus: ## Provision Prometheus stack, adding a timeout parame
 eks@provision-prometheus-adapter: ## Provision Prometheus adapter for custom metrics API
 	helm repo add --force-update prometheus-community https://prometheus-community.github.io/helm-charts
 	helm upgrade --install \
-		--version 2.12.1 \
+		--version 4.2.0 \
 		prom-adapter prometheus-community/prometheus-adapter \
 		-f deployment/infrastructure/deployment/prometheus/adapter-values.yaml
 
 eks@provision-autoscaler: ## Provision Cluster Autoscaler
 	helm repo add --force-update autoscaler https://kubernetes.github.io/autoscaler
 	helm upgrade --install \
-		--version 9.9.2 \
+		--version 9.37.0 \
 		autoscaler autoscaler/cluster-autoscaler \
 		-f deployment/infrastructure/deployment/autoscaler/values.yaml \
 		--set "autoDiscovery.clusterName=$(STACK_NAME)"
@@ -159,7 +160,7 @@ eks@provision-autoscaler: ## Provision Cluster Autoscaler
 eks@provision-ebs-csi: ## Provision EBS CSI driver
 	helm repo add --force-update aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
 	helm upgrade --install \
-		--version 0.10.2 \
+		--version 2.30.0 \
 		aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
 		-f deployment/infrastructure/deployment/ebs-csi-driver/values.yaml
 	kubectl apply -f deployment/infrastructure/deployment/ebs-csi-driver/crd

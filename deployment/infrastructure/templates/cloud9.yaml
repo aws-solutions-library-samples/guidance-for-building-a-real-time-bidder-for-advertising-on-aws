@@ -20,7 +20,6 @@ Resources:
         Path: /service-role/
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/AWSCloud9SSMInstanceProfile
-          - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
         AssumeRolePolicyDocument: |
           {
             "Version": "2012-10-17",
@@ -59,7 +58,7 @@ Resources:
         - - !Ref RootStackName
           - '-cloud9Instance' 
       Repositories: 
-        - RepositoryUrl: https://git-codecommit.us-west-2.amazonaws.com/v1/repos/RTBCodeKitRepo
+        - RepositoryUrl: https://github.com/owner/aws-rtbkit
           PathComponent: /RTBCodeKitRepo
       SubnetId: !Ref Subnet04 # TODO pull the subnet info using function
 

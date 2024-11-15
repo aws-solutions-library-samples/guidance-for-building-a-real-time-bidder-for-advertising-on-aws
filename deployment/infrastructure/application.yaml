@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). This template has configuration mappings for different variations of benchmarks and will trigger nested templated to deploy VPC, VPC Endpoints, EKS Cluster, Kinesis DataStreams and Firehose, and Cloud9 Instance.
+Description: Guidance for Building a Real Time Bidder for Advertising on AWS (SO9111). This template has configuration mappings for different variations of benchmarks and will trigger nested templated to deploy VPC, VPC Endpoints, EKS Cluster, Kinesis DataStreams and Firehose.
 
 Parameters:
   RootStackName:
@@ -675,7 +675,7 @@ Resources:
       TemplateURL: ./templates/vpc.yaml
       Parameters:
         EksClusterName: !Ref AWS::StackName
-        RootStackName: !Ref RootStackName # adding root stack name to fix cloud9 client error
+        RootStackName: !Ref RootStackName
       Tags:
         - Key: stackName
           Value: !Ref AWS::StackName
@@ -751,14 +751,14 @@ Resources:
         - Key: stackName
           Value: !Ref AWS::StackName
   
-  CnineInstance:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: VPC
-    Properties:
-      TemplateURL: ./templates/cloud9.yaml
-      Parameters:
-        RootStackName: !Ref RootStackName
-        Subnet04: !GetAtt [VPC, Outputs.SubnetId]
+  # CnineInstance:
+  #   Type: AWS::CloudFormation::Stack
+  #   DependsOn: VPC
+  #   Properties:
+  #     TemplateURL: ./templates/cloud9.yaml
+  #     Parameters:
+  #       RootStackName: !Ref RootStackName
+  #       Subnet04: !GetAtt [VPC, Outputs.SubnetId]
 
 Outputs:
   StackName:
@@ -766,13 +766,3 @@ Outputs:
     Value: !Ref AWS::StackName
     Export:
       Name: StackName
-
-  Cloud9IDEURL:
-    Description: IDE URL to access cloud9
-    Value: !GetAtt CnineInstance.Outputs.Cloud9IDEURL
-
-  Cloud9EnvID:
-    Description: cloud9 instance enevironment ID
-    Value: !GetAtt CnineInstance.Outputs.Cloud9EnvID
-  
-

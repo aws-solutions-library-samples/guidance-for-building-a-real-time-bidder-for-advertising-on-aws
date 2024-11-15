@@ -1,8 +1,8 @@
-Amazon Bidder CodeKit Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+AWS RTB CodeKit Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 ====================================================================================================
 
-Amazon Bidder CodeKit contains the following third-party software/licensing:
+AWS RTB CodeKit contains the following third-party software/licensing:
 
 # Bidder application
 
@@ -18,7 +18,7 @@ Amazon Bidder CodeKit contains the following third-party software/licensing:
 
 ====================================================================================================
 
-Amazon Bidder CodeKit includes the following third-party software/licensing:
+AWS RTB CodeKit includes the following third-party software/licensing:
 
 # Bidder application
 

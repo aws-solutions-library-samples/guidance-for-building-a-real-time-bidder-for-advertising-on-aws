@@ -24,7 +24,7 @@ phases:
       - echo "Build completed `date`"
   post_build:
     commands:
-      - aws eks update-cluster-config --region ${AWS_REGION} --name ${RTBKIT_ROOT_STACK_NAME} --logging '{"clusterLogging":[{"types":["api","audit","authenticator","controllerManager","scheduler"],"enabled":true}]}'
+      - chmod +x ./post-build.sh && ./post-build.sh ${AWS_REGION} ${RTBKIT_ROOT_STACK_NAME}
       - echo "Post build completed on `date`"
 
 artifacts:

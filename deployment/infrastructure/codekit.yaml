@@ -200,7 +200,9 @@ Resources:
               - eks:ListTagsForResource
               - eks:AccessKubernetesApi
             Effect: Allow
-            Resource: !Sub "arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${AWS::StackName}*"
+            Resource: 
+              - !Sub "arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${AWS::StackName}*"
+              - !Sub "arn:aws:eks:${AWS::Region}:${AWS::AccountId}:nodegroup/${AWS::StackName}*"
         Version: '2012-10-17'
       PolicyName: "EksClusterAccessPolicy"
       Roles:
@@ -367,7 +369,42 @@ Resources:
       Roles:
         - Ref: EksAccessRole
         - Ref: EksWorkerRole
-        
+
+  EKSWorkerRoleAutoScalerPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: EksAccessRole
+    Description: The autoscaler will scale down the nodes in the nodegroups based on the setting.
+    Properties:
+      Roles:
+        - Ref: EksAccessRole
+        - Ref: EksWorkerRole
+      PolicyName: "AutoScalerEKSPolicy"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:DescribeAutoScalingGroups
+              - autoscaling:DescribeAutoScalingInstances
+              - autoscaling:DescribeLaunchConfigurations
+              - autoscaling:DescribeScalingActivities
+              - ec2:DescribeImages
+              - ec2:DescribeInstanceTypes
+              - ec2:DescribeLaunchTemplateVersions
+              - ec2:GetInstanceTypesFromInstanceRequirements
+              - eks:DescribeNodegroup
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - autoscaling:SetDesiredCapacity
+              - autoscaling:TerminateInstanceInAutoScalingGroup
+            Resource: "*"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W12
+            reason: Can't point to a specific resource in order to support autodiscovery. Customers can update this policy complementary to the change in the make file by identifying autoscaling groups in the helm deploy commands
+           
   DatagenAppRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -427,11 +464,3 @@ Outputs:
     Value: !Sub "${AWS::StackName}-nvme-provisioner"
     Export:
       Name: EksNvmeProvisionerRepository
-  
-  Cloud9IDEURL:
-    Description: IDE URL to access cloud9
-    Value: !GetAtt ApplicationStack.Outputs.Cloud9IDEURL
-
-  Cloud9EnvID:
-    Description: cloud9 instance enevironment ID
-    Value: !GetAtt ApplicationStack.Outputs.Cloud9EnvID

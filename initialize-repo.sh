@@ -149,7 +149,7 @@ fi
 if sh -c "echo $USE_DATAGEN | grep -q -E '^(yes)$'" ; then
     echo "[Setup] Populating the database with testing data..."
     make datagen@image IMAGE_PREFIX="${STACK_NAME}-"
-    make datagen@push IMAGE_PREFIX="${STACK_NAME}-"
+    # make datagen@push IMAGE_PREFIX="${STACK_NAME}-"
     if sh -c "echo $VARIANT | grep -q -E '^(Aerospike)$'" ; then
        echo "Datagen on Aerospike has been disabled"
        make aerospike@datagen DATAGEN_CONCURRENCY=32 DATAGEN_ITEMS_PER_JOB=10000  DATAGEN_DEVICES_ITEMS_PER_JOB=100000 DATAGEN_DEVICES_PARALLELISM=30 STACK_NAME=${STACK_NAME}
@@ -165,7 +165,7 @@ make eks@deploybidder VALUES=${BIDDER_OVERLAY_TEMP}
 
 if sh -c "echo $USE_LOAD_GENERATOR | grep -q -E '^(yes)$'" ; then
     make load-generator@build
-    make load-generator@push
+    # make load-generator@push
     LOAD_GENERATOR_OVERLAY_TEMP=$(mktemp)
     envsubst < deployment/infrastructure/deployment/load-generator/overlay-codekit.yaml.tmpl >${LOAD_GENERATOR_OVERLAY_TEMP}
 
