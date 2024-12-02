@@ -34,8 +34,8 @@ load-generator@test: ## Run unit tests
 # Targets run from repository root
 ################################################################################
 
-load-generator@build: ## Builds docker image with load-generator tool
-	docker build -t $(LOAD_GENERATOR_IMAGE_TAG) --build-arg IMAGE_PREFIX=$(AWS_PUBLIC_IMAGE_PREFIX) --build-arg REGISTRY=$(AWS_PUBLIC_ECR_REGISTRY) $(_PWD)/tools/load-generator
+load-generator@build: ## Builds docker image with load-generator tool, Adding push to the command to fix pipeline errors
+	docker build --push -t $(LOAD_GENERATOR_IMAGE_TAG) --build-arg IMAGE_PREFIX=$(AWS_PUBLIC_IMAGE_PREFIX) --build-arg REGISTRY=$(AWS_PUBLIC_ECR_REGISTRY) $(_PWD)/tools/load-generator
 load-generator@push: ## Pushes docker image with load-generator tool
 	docker push $(LOAD_GENERATOR_IMAGE_TAG)
 
