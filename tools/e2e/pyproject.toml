@@ -7,7 +7,7 @@ authors = ["AWS Bidder Team <aws-bidder@clearcode.cc>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 pytest = "^6.2.2"
-requests = "^2.25.1"
+requests = "^2.32.2"
 pytest-cov = "^2.11.1"
 pylint = "^2.7.2"
 mypy = "^0.812"
