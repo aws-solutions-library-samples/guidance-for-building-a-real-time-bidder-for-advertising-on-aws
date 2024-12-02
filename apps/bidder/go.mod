@@ -33,7 +33,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.1
 	go.uber.org/atomic v1.7.0
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
-	google.golang.org/protobuf v1.28.2-0.20230118093459-a9481185b34d
+	google.golang.org/protobuf v1.33.0
 	gvisor.dev/gvisor v0.0.0-20230228024301-802c800ebcce
 )
 
