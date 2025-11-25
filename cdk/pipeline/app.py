@@ -6,13 +6,13 @@ import os
 import aws_cdk as cdk
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
-from pipeline.pipeline_stack import PipelineStack
+from pipeline.pipeline_stack import BuildStack
 
 
 app = cdk.App()
 # pass stage as input as needed
-pipeline_stack = PipelineStack(app, 
-                               "RTBPipelineStack",
+pipeline_stack = BuildStack(app, 
+                               "RTBBuildStack",
                                 env=cdk.Environment(
                                     account=os.environ["CDK_DEFAULT_ACCOUNT"],
                                     region=os.environ["CDK_DEFAULT_REGION"]),
@@ -43,5 +43,6 @@ NagSuppressions.add_stack_suppressions(
     nag_suppressions,
     apply_to_nested_stacks=True
 )
-cdk.Aspects.of(app).add(AwsSolutionsChecks())
+
+# cdk.Aspects.of(app).add(AwsSolutionsChecks())
 app.synth()

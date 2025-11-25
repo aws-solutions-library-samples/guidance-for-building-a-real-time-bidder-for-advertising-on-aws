@@ -1,12 +1,13 @@
 {
     "dev": {
-        "REPO_BRANCH":"main",
+        "REPO_BRANCH": "main",
         "GITHUB_TOKEN_SECRET_ID": "rtbkit-github-token"
     },
     "shared": {
-        "ROOT_STACK_NAME": "aws-rtbkit",
-        "STACK_VARIANT": "DynamoDB",
-        "REPO_OWNER":"",
-        "REPO_NAME":""
+        "ROOT_STACK_NAME": "aws-rtbkit-SET_IT_TO_YOUR_ALIAS_OR_ACCOUNT",
+        "STACK_VARIANT": "DynamoDBBasic",
+        "REPO_OWNER": "shapirov103",
+        "REPO_NAME": "guidance-rtb",
+        "BUILD_SPEC": "buildspec.yml"
     }
 }

@@ -1,0 +1,16 @@
+  # cluster.yaml
+  apiVersion: eksctl.io/v1alpha5
+  kind: ClusterConfig
+  metadata:
+    name: cluster2-ssp
+    region: ${AWS_REGION}
+  vpc:
+    cidr: "10.0.0.0/16" 
+    nat:
+      gateway: Single 
+  autoModeConfig:
+    enabled: true
+    nodePools: ["system"]
+
+
+

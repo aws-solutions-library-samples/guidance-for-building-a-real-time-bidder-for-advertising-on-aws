@@ -45,7 +45,7 @@ export VARIANT=$4
 
 export USE_DATAGEN=$5
 
-if ! sh -c "echo $VARIANT | grep -q -E '^(DynamoDB|Aerospike)$'" ; then
+if ! sh -c "echo $VARIANT | grep -q -E '^(DynamoDB|Aerospike|DynamoDBBasic|)$'" ; then
     echo "Unsupported database variant: ${VARIANT}"
     exit 1
 fi
@@ -146,6 +146,8 @@ if sh -c "echo $VARIANT | grep -q -E '^(Aerospike)$'" ; then
     make aerospike@wait
 fi
 
+make eks@provision-aws-loadbalancer-controller 
+
 if sh -c "echo $USE_DATAGEN | grep -q -E '^(yes)$'" ; then
     echo "[Setup] Populating the database with testing data..."
     make datagen@image IMAGE_PREFIX="${STACK_NAME}-"
@@ -178,3 +180,6 @@ if sh -c "echo $USE_LOAD_GENERATOR | grep -q -E '^(yes)$'" ; then
     fi
 fi
 echo "[Setup] The bidder has been deployed. You can log in to the EKS cluster and access the Grafana dashboards."
+
+make eks@deploy-loadbalancers
+

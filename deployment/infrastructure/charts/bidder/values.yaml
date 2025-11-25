@@ -197,7 +197,7 @@ hpa:
   enabled: false
 
   replicas:
-    min: 30
+    min: 5
     max: 120
 
   metrics: []

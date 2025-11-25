@@ -23,10 +23,20 @@ Parameters:
     Default: 192.168.112.0/20
     Description: CidrBlock for subnet 03 within the VPC. This is used only if the region has more than 2 AZs.
   
-  Subnet04Block:
+  PublicSubnet01Block:
     Type: String
-    Default: 192.168.128.0/20
-    Description: Public Subnet, CidrBlock for subnet 04 within the VPC. This is used only if the region has more than 2 AZs.
+    Default: 192.168.176.0/20
+    Description: Public Subnet, CidrBlock for subnet 01 within the VPC.
+    
+  PublicSubnet02Block:
+    Type: String
+    Default: 192.168.192.0/20
+    Description: Public Subnet, CidrBlock for subnet 02 within the VPC.
+    
+  PublicSubnet03Block:
+    Type: String
+    Default: 192.168.208.0/20
+    Description: Public Subnet, CidrBlock for subnet 03 within the VPC. This is used only if the region has more than 2 AZs.
 
   EksClusterName:
     Description: EKS Cluster Name
@@ -112,7 +122,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-Subnet01'
-        - Key: kubernetes.io/role/elb
+        - Key: kubernetes.io/role/internal-elb
           Value: '1'
         - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
           Value: 'shared'
@@ -135,7 +145,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-Subnet02'
-        - Key: kubernetes.io/role/elb
+        - Key: kubernetes.io/role/internal-elb
           Value: '1'
         - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
           Value: 'shared'
@@ -159,30 +169,76 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-Subnet03'
-        - Key: kubernetes.io/role/elb
+        - Key: kubernetes.io/role/internal-elb
           Value: '1'
         - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
           Value: 'shared'
 
-  Subnet04:
-    Condition: HasMoreThan2Azs
+  PublicSubnet1:
     Type: AWS::EC2::Subnet
     Metadata:
-      Comment: Subnet 04
+      Comment: Public Subnet 01
     Properties:
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       AvailabilityZone:
         Fn::Select:
-          - '3'
+          - '0'
           - Fn::GetAZs:
               Ref: AWS::Region
       CidrBlock:
-        Ref: Subnet04Block
+        Ref: PublicSubnet01Block
       VpcId:
         Ref: VPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-Subnet04'
+          Value: !Sub '${AWS::StackName}-PublicSubnet01'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+          
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Public Subnet 02
+    Properties:
+      MapPublicIpOnLaunch: false
+      AvailabilityZone:
+        Fn::Select:
+          - '1'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet02Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicSubnet02'
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
+          Value: 'shared'
+          
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Condition: HasMoreThan2Azs
+    Metadata:
+      Comment: Public Subnet 03
+    Properties:
+      MapPublicIpOnLaunch: false
+      AvailabilityZone:
+        Fn::Select:
+          - '2'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet03Block
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicSubnet03'
         - Key: kubernetes.io/role/elb
           Value: '1'
         - Key: !Sub 'kubernetes.io/cluster/${EksClusterName}'
@@ -190,18 +246,15 @@ Resources:
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-    DependsOn: Subnet04
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
-    DependsOn: Subnet04
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref VPC
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
-    DependsOn: Subnet04
     Properties:
       VpcId: !Ref VPC
       Tags:
@@ -218,18 +271,21 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  NatGateway:
-    Type: AWS::EC2::NatGateway
-    DependsOn: NatPublicIP
-    Properties: 
-      SubnetId: !Ref Subnet04
-      AllocationId: !GetAtt NatPublicIP.AllocationId
-
-  NatPublicIP:
+  NatPublicIPRtb:
     Type: AWS::EC2::EIP
-    DependsOn: VPC
+    DependsOn: VPCGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-NatGatewayEIP'
+
+  NatGatewayRtb:
+    Type: AWS::EC2::NatGateway
+    DependsOn: [VPCGatewayAttachment, NatPublicIPRtb]
+    Properties: 
+      SubnetId: !Ref PublicSubnet2
+      AllocationId: !GetAtt NatPublicIPRtb.AllocationId
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -238,12 +294,12 @@ Resources:
       VpcId: !Ref VPC
 
   PrivateRoute:
-    DependsOn: NatGateway
+    DependsOn: NatGatewayRtb
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
+      NatGatewayId: !Ref NatGatewayRtb
 
   Subnet01RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -264,11 +320,23 @@ Resources:
       SubnetId: !Ref Subnet03
       RouteTableId: !Ref PrivateRouteTable
 
-  Subnet04RouteTableAssociation:
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+      
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+      
+  PublicSubnet3RouteTableAssociation:
     Condition: HasMoreThan2Azs
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet04
+      SubnetId: !Ref PublicSubnet3
       RouteTableId: !Ref PublicRouteTable
   Role:
     Type: 'AWS::IAM::Role'
@@ -307,57 +375,6 @@ Resources:
       ResourceType: 'VPC'
       TrafficType: ALL
 
-#  AWSCloud9SSMAccessRole:
-#      Type: AWS::IAM::Role
-#      Properties:
-#        RoleName: RTB-AWSCloud9SSMAccessRole
-#        Description: Service role for Cloud9 access
-#        Path: /service-role/
-#        ManagedPolicyArns:
-#          - arn:aws:iam::aws:policy/AWSCloud9SSMInstanceProfile
-#        AssumeRolePolicyDocument: |
-#          {
-#            "Version": "2012-10-17",
-#            "Statement": [
-#              {
-#                "Effect": "Allow",
-#                "Principal": {
-#                  "Service": [
-#                    "ec2.amazonaws.com",
-#                    "cloud9.amazonaws.com"
-#                  ]
-#                },
-#                "Action": "sts:AssumeRole"
-#              }
-#            ]
-#          }
-#  AWSCloud9SSMInstanceProfile:
-#    Type: AWS::IAM::InstanceProfile
-#    Properties:
-#      InstanceProfileName: AWSCloud9SSMInstanceProfile
-#      Path: /cloud9/
-#      Roles:
-#        - !Ref AWSCloud9SSMAccessRole
-#
-#  C9Instance:
-#    Type: AWS::Cloud9::EnvironmentEC2
-#    DependsOn: [AWSCloud9SSMAccessRole, Subnet04]
-#    Properties: 
-#      AutomaticStopTimeMinutes: 30
-#      ConnectionType: CONNECT_SSM
-#      Description: !Sub '${AWS::StackName}-cloud9 instance'
-#      ImageId: amazonlinux-2-x86_64
-#      InstanceType: t3.xlarge
-#      # simplify the instance name
-#      Name: !Join
-#        - ''
-#        - - !Ref RootStackName
-#          - '-cloud9Instance' 
-#      Repositories: 
-#        - RepositoryUrl: https://github.com/owner/aws-rtbkit
-#          PathComponent: /RTBCodeKitRepo
-#      SubnetId: !Ref Subnet04
-
 Outputs:
   SubnetIds:
     Description: All subnets in the VPC
@@ -366,9 +383,13 @@ Outputs:
         - HasMoreThan2Azs
         - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
         - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02 ] ]
-  SubnetId:
-    Description: subnet id
-    Value: !Ref Subnet04
+  PublicSubnetIds:
+    Description: All public subnets in the VPC
+    Value:
+      Fn::If:
+        - HasMoreThan2Azs
+        - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3 ] ]
+        - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
 
   VpcId:
     Description: The VPC Id

@@ -40,24 +40,25 @@ Parameters:
       - 'CodekitAerospike'
       - 'CodekitDynamoDB'
       - 'BenchmarkAB-629'
+      - 'CodekitDynamoDBBasic'
 
 Mappings:
   VariantConfig:
-    CodekitAerospike: # Variant for development and basic tests
+    CodekitAerospike: # Variant for codekit
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
       EksBenchmarkNodeGroupSizeMax: '1'
 
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
 
       AerospikeNodeGroupSize: '8'
       AerospikeInstanceType: 'i3en.24xlarge'
 
       BasicArmNodeGroupSize: '1'
       BasicX86NodeGroupSize: '1'
-      BasicArmInstanceType: 'm6g.16xlarge' #
+      BasicArmInstanceType: 'm6g.2xlarge' #
       StaticCPUManagerPolicy: '1'
 
       DaxNodeType: 'dax.r5.2xlarge'
@@ -80,9 +81,9 @@ Mappings:
       KinesisBenchmarkScaleOutEvaluationMinutes: '1'
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
-    CodekitDynamoDB: # Variant for development and basic tests
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+    CodekitDynamoDB: # Variant for codekit
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -117,9 +118,46 @@ Mappings:
       KinesisBenchmarkScaleOutEvaluationMinutes: '1'
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
+    CodekitDynamoDBBasic: # Variant for codekit with quick start without increasing limits
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
+      EksApplicationNodeGroupSizeMin: '1'
+      EksApplicationNodeGroupSizeMax: '1'
+      EksBenchmarkNodeGroupSizeMin: '1'
+      EksBenchmarkNodeGroupSizeMax: '1'
+
+      AerospikeNodeGroupSize: '0'
+      AerospikeInstanceType: 'i3.large'
+
+      BasicArmNodeGroupSize: '2'
+      BasicX86NodeGroupSize: '2'
+      BasicArmInstanceType: 'm6g.medium'
+      StaticCPUManagerPolicy: '1'
+
+      DaxNodeType:                  'dax.t3.small'     # DAX node instance type
+      DaxMinNodeCount:              '0'                # Minimum number of DAX nodes
+      DaxMaxNodeCount:              '0'                # Maximum number of DAX nodes
+
+      DaxScaleInUtilization:        '40'               # CPU utilization below what DAX will be scaled in
+      DaxScaleOutUtilization:       '75'               # CPU utilization above what DAX will be scaled out
+      DaxScaleInEvaluationMinutes:  '10'               # How many minutes the utilization must be below the level before scale in
+      DaxScaleOutEvaluationMinutes: '2'                # How many minutes the utilization must be above the level before scale out
+
+      SingleAZ: '1'
+
+      KinesisBenchmarkMinShardCount:             '200'   # Minimum number of shards
+      KinesisBenchmarkMaxShardCount:             '200'   # Maximum number of shards
+
+      KinesisBenchmarkScaleOutUtilization:       '80'  # Utilization above what Kinesis will be scaled out
+      KinesisBenchmarkScaleInUtilization:        '50'  # Utilization below what Kinesis will be scaled in
+      KinesisBenchmarkScaleOutPercent:           '30'  # In percent capacity change for scale out
+      KinesisBenchmarkScaleInPercent:            '-20' # In percent capacity change for scale in
+      KinesisBenchmarkScaleOutEvaluationMinutes: '1'   # How many minutes the utilization must be above the level before scale out
+      KinesisBenchmarkScaleInEvaluationMinutes:  '10'  # How many minutes the utilization must be below the level before scale in
+
     Basic: # Variant for development and basic tests
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -155,8 +193,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'  # How many minutes the utilization must be below the level before scale in
 
     BasicDax: # Variant for development and basic tests with DAX enabled
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -192,8 +230,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     AerospikeDataLoad: # Variant for loading data to Aerospike
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -229,8 +267,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     BenchmarkSmallDax:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -260,8 +298,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     BenchmarkMediumDax:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '10'
       EksApplicationNodeGroupSizeMax: '10'
       EksBenchmarkNodeGroupSizeMin: '10'
@@ -296,8 +334,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     BenchmarkSmallDynamoDB:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -332,8 +370,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     BenchmarkMediumDynamoDB:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '10'
       EksApplicationNodeGroupSizeMax: '10'
       EksBenchmarkNodeGroupSizeMin: '10'
@@ -368,8 +406,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     Benchmark: # Single node setup, used for benchmarking without Kinesis
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -405,8 +443,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     BenchmarkMediumAerospike:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '10'
       EksApplicationNodeGroupSizeMax: '10'
       EksBenchmarkNodeGroupSizeMin: '10'
@@ -442,8 +480,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     Hold:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -479,8 +517,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     HoldAerospike:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -516,8 +554,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes: '10'
 
     BenchmarkKinesis: # Single node setup, used for benchmarking the HTTP server with enabled Kinesis
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -553,8 +591,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     BenchmarkAutoscale:
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '10'
       EksBenchmarkNodeGroupSizeMin: '2'
@@ -590,8 +628,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     BidderE2E: # Variant for e2e CI services with DAX enabled
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '0'
       EksApplicationNodeGroupSizeMax: '0'
       EksBenchmarkNodeGroupSizeMin: '0'
@@ -631,8 +669,8 @@ Mappings:
       KinesisBenchmarkScaleInEvaluationMinutes:  '10'
 
     BenchmarkAB-629: # AB-629-Full-system-benchmark-with-DynamoDB
-      EksApplicationNodeGroupInstanceType: 'm6g.16xlarge'
-      EksBenchmarkNodeGroupInstanceType: 'm6g.16xlarge'
+      EksApplicationNodeGroupInstanceType: 'm6g.2xlarge'
+      EksBenchmarkNodeGroupInstanceType: 'm6g.2xlarge'
       EksApplicationNodeGroupSizeMin: '1'
       EksApplicationNodeGroupSizeMax: '1'
       EksBenchmarkNodeGroupSizeMin: '1'
@@ -674,7 +712,7 @@ Resources:
     Properties:
       TemplateURL: ./templates/vpc.yaml
       Parameters:
-        EksClusterName: !Ref AWS::StackName
+        EksClusterName: !Ref RootStackName
         RootStackName: !Ref RootStackName
       Tags:
         - Key: stackName
@@ -747,18 +785,10 @@ Resources:
         DeliveryStreamBufferSize:     '128'
         DeliveryStreamCompression:    'GZIP'
         ProducerRoleARN: !Ref EksWorkerRoleArn
+        Variant: !Ref Variant
       Tags:
         - Key: stackName
           Value: !Ref AWS::StackName
-  
-  # CnineInstance:
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn: VPC
-  #   Properties:
-  #     TemplateURL: ./templates/cloud9.yaml
-  #     Parameters:
-  #       RootStackName: !Ref RootStackName
-  #       Subnet04: !GetAtt [VPC, Outputs.SubnetId]
 
 Outputs:
   StackName:

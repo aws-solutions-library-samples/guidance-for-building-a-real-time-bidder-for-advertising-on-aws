@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::607766886180:role/aws-rtbkit-607766886180-EksServiceRole-KFjuxtgWOIJW
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+  mapUsers: |
+    - userarn: arn:aws:iam::607766886180:user/shapirov-cli
+      username: shapirov-cli
+      groups:
+        - system:masters

@@ -6,12 +6,12 @@ Parameters:
     Type: String
     Description: Variant of infrastructure to deploy
     AllowedValues:
-    - Basic
+    - CodekitDynamoDBBasic
     - BenchmarkDynamoDB
     - BenchmarkAutoscale
     - BenchmarkAutoscale
     - CodekitDynamoDB
-    Default: 'Basic'
+    Default: 'CodekitDynamoDBBasic'
     
   EksWorkerRoleARN:
     Type: String
@@ -54,8 +54,8 @@ Mappings:
       ScaleInCooldown:     '600'
       ScaleOutCooldown:    '60'
 
-    Basic: # Variant for development and basic tests with autoscaling enabled
-      BillingMode:     'PROVISIONED'
+    CodekitDynamoDBBasic: # Variant for development and basic tests with autoscaling enabled
+      BillingMode:     'PAY_PER_REQUEST'
 
       DevicesReadMinCU:    '25'
       DevicesReadMaxCU:    '25'

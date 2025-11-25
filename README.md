@@ -55,7 +55,7 @@ The Real-Time Bidder Solution on AWS consists of 5 modules:
     3. Enter a name for the secret. This name is required in the cdk context file later on.
     4. Leave the rest as default and store the secret.
 
-### Service Limits
+### Service Limits (not required atm)
 
 Increase the following service limits via Service Quotas section in AWS Console.
 * DynamoDB table Read Capacity Unit (RCU) limit should be increased to 150,000 RCU's from default 40,000 RCU's. The limit is called `Table-level read throughput limit` under the `Amazon DynamoDB` service quota.
@@ -65,149 +65,98 @@ Increase the following service limits via Service Quotas section in AWS Console.
 
 ![Architecture](./images/RTBCodekitArchitecture.png)
 
-## Deployment
+## Deployment of DSP Infrastructure and Application
+
+If you are looking for instructions to provision publisher (SSP) infrastructure, go to the section "Deployment of Publisher (SSP) Infrastructure and Load Generator".
+The following steps describe deployment of the infrastructure that will deploy responder application capable of accepting bid requests and responding with contrived data (generated with the datagen tool). You can run local load testing of this cluster (in-cluster load test) if needed. Along with the application, the cluster will have the observability stack based on prometheus/grafana. 
 
 1. Clone this repo to your local machine.
-2. Open the terminal on your local machine and configure your AWS credentials profile (Secret ID and Token), region and output using the following command:
-    ```
-    aws configure --profile rtb
-    ```
-3. Run the following command to setup to connection from AWS CodeBuild on your AWS account to the GitHub repo:
-    ```
-    aws codebuild import-source-credentials --server-type GITHUB --auth-type PERSONAL_ACCESS_TOKEN --token <token_value> --profile rtb
-    ```
-    You should receive a response similar to the following:
-    ```
-    {
-        "arn": "arn:aws:codebuild:<region>:<account-number>:token/github"
-    }
-    ```
-4. Navigate to `aws-real-time-bidder/cdk/pipeline` in your terminal or IDE and copy `cdk.context.json.example` file to `cdk.context.json`:
-    ```
-    cd cdk/pipeline
-    cp cdk/pipeline/cdk.context.json.example cdk/pipeline/cdk.context.json
-    ```
 
-5.  Update the `GITHUB_TOKEN_SECRET_ID`,`ROOT_STACK_NAME`,`STACK_VARIANT` (DynamoDB/Aerospike) and variables on the `cdk.context.json`:
+2. Configure your settings by creating a `.env` file in the root (use `envtemplate` as template). Update the `STACK_NAME`,`STACK_VARIANT` (DynamoDB/Aerospike/DynamoDBBasic) and the rest of the variables in the `.env` file. If you don't have N‌etworkBr‌idge target yet, set TARGET to TARGET_LOCAL. Leave the BUILD_SPEC as `buildspec.yml`. 
+**Important:** STACK_NAME MUST be lowercase and unique as it creates ECR repo and an S3  bucket with that name. Also remove any trailing comments, like `# set this to a  unique name such as rtbkit-<your-alias>-<region>`. 
     ```
-    {
-        "dev": {
-            "REPO_BRANCH":"main",
-            "GITHUB_TOKEN_SECRET_ID": "rtbkit-github-token" #-- AWS SecretManager secret name
-        },
-        "shared": {
-            "ROOT_STACK_NAME": "aws-rtbkit",
-            "STACK_VARIANT": "DynamoDB", #-- [DynamoDB|Aerospike]
-            "REPO_OWNER":"", #-- Owner of the fork repo
-            "REPO_NAME":"" #-- Name of the fork repo
-        }
-    }
+    cp envtemplate .env
+    cat .env
+
+    STACK_NAME=rtbkit-<your-user-alias>-<region>
+    AWS_REGION=us-east-1
+    STACK_VARIANT=DynamoDbBasic
+    REPO_OWNER=shapirov103
+    REPO_NAME=guidance-for-building-a-real-time-bidder-for-advertising-on-aws
+    REPO_BRANCH=main
+    BUILD_SPEC=buildspec.yml
+    TARGET_LOCAL="http://bidder/bidrequest"
+    TARGET_NETWORKBRIDGE="https://<your rtb app>.<acct>.<region>.dataplane.rtb.example.aws.dev/link/<link-id>/bidrequest"
+    TARGET_PUBLIC_NLB="http://<your-nlb-dns>.amazonaws.com/bidrequest"
+    TARGET=$(TARGET_NETWORKBRIDGE)
     ```
-6.  Check if python3 and the python3 virtual environment are installed on your machine if not install python3:
+3.  Check if python3 and the python3 virtual environment are installed on your machine if not install python3:
     ```
-    sudo apt-get install python3
     python3 --version
     ```
-7. Create a python3 virtual environment and install the requirements and boto3 libraries:
+4.  Set up CDK (installs the requirements and boto3 libraries and bootstraps):
     ```
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip3 install -r requirements.txt
+    make cdk@setup
+    # validate the settings
+    make cdk@list
     ```
-8. Deploy the CDK stack:
+5. Deploy the CDK stack:
     ```
-    cdk bootstrap --profile rtb
-    cdk deploy --profile rtb
+    make cdk@deploy
     ```
-9. CDK will deploy the resources as shown below:
+6. CDK will deploy the resources as shown below:
 
     ![CDK Deployment](./images/CDKDeployment-2.png)
     ![CDK Deployment](./images/CDKDeployment.png)
 
-10. On successful deployment you will see as following
+7. On successful deployment you will see as following
     ```
-    ✅ RTBPipelineStack
+    ✅ RTBBuildStack
     ```
 
-11. After the CDK deployment is complete, a CodePipeline will start and deploy the `Real-Time-Bidding Solution` in your AWS Account using CloudFormation. This will take approximately thirty minutes. Once successful you will see:
+8. After the CDK deployment is complete, a CodeBuild project will be provisioned ready to build and deploy both infrastructure and the `Real-Time-Bidding Solution` in your AWS Account using CloudFormation. 
+
+9. Kick off the CodeBuild build by running the following command:
+
+```sh
+cd ../.. # return to the project root
+aws codebuild start-build --project-name "rtb-build-project"
+```
+This will take approximately twenty minutes. You can navigate to AWS Console (UI) and find the CodeBuild project named `rtb-build-prpject` and observe the execution of the latest run through the logs. 
+
+Once successful you will see:
 
     ![Build Success](./images/buildsuccess.png)
 
-12. Open AWS console and navigate to EKS service. Locate the cluster deployed by the stack. Navigate to Add-ons tab and install the Amazon EBS CSI Driver add on:
+11. (Optional for Aerospike variant) Open AWS console and navigate to EKS service. Locate the cluster deployed by the stack. Navigate to Add-ons tab and install the Amazon EBS CSI Driver add on:
     > **IMPORTANT**: Select `Optional configuration schema` and click select `Override` for the `Conflict resolution method` 
     
     ![EKS Add on](./images/eks-addon.png)
 
-13. Once the deployment is completed go to the CloudFormation console and navigate to root stack (this will be the stack with name that you have provided in cdk.json file in step 4). Go to Outputs tab and copy `ApplicationStackName`, `ApplicationStackARN`, `EKSAccessRoleARN`, `EKSWorkerRoleARN`. We will be using them in the following steps.
+12. Once the deployment is completed go to the CloudFormation console and navigate to root stack (this will be the stack with name that you have provided in cdk.json file in step 4). Go to Outputs tab and copy `ApplicationStackName`, `ApplicationStackARN`, `EKSAccessRoleARN`, `EKSWorkerRoleARN`. We will be using them in the following steps.
 
-14. Ensure the pre-requisites (`Helm`, `Kubectl` and `jq`) are installed on the local/client machine as per the pre-requisites section above.
+13. Ensure the pre-requisites (`Helm`, `Kubectl` and `jq`) are installed on the local/client machine as per the pre-requisites section above.
     > Tip: The pre-requisites can be installed using the shell script [client-setup.sh](./client-setup.sh). Navigate to the root directory and change the script permissions `chmod 700 client-setup.sh` before running the script.
 
     >NOTE: Commands for steps 15 - 22 are included in a shell script [run-benchmark.sh](./run-benchmark.sh). Navigate to the directory and change the script permissions `chmod 700 client-setup.sh` if required before running the script.
 
-15. Open a command terminal in your local/client machine, navigate to the repository folder and run the following commands. The following commands will set the variables in your terminal which are used to connect to EKS cluster and run benchmarks:
-
-    >NOTE: Ensure you specify the correct `--profile` and `--region` in the commands below
-
-    ```
-    export AWS_ACCOUNT=<Account Number>
-
-    export AWS_PROFILE=<Aws Profile Name>
-
-    export AWS_REGION=<AWS Region>
-
-    export ROOT_STACK=<ROOT Stack Name>
-
-    export APPLICATION_STACK_NAME=`aws cloudformation list-exports --query "Exports[?Name=='ApplicationStackName'].Value" --output text`
-
-    export CODEBUILD_STACK_NAME=`aws cloudformation describe-stacks --stack-name ${ROOT_STACK} --output json | jq '.Stacks[].Outputs[] | select(.OutputKey=="CodebuildStackARN") | .OutputValue' | cut -d/ -f2`
-
-    export EKS_WORKER_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Name=='EKSWorkerRoleARN'].Value" --output text`
-
-    export EKS_ACCESS_ROLE_ARN=`aws cloudformation list-exports --query "Exports[?Name=='EKSAccessRoleARN'].Value" --output text`
-
-    export STACK_NAME=$ROOT_STACK
-    ```
-16. Now, run the following command to assume EKS_ACCESS_ROLE to connect to the EKS cluster:
-    ```
-    CREDS_JSON=`aws sts assume-role --role-arn $EKS_ACCESS_ROLE_ARN \
-        --role-session-name EKSRole-Session --output json`
-    ```
-    >Note: You may need to manually configure AWS CLI credentials using `aws configure` if the temporary tokens don’t work.
-
-17. Output of above command you will give you AccessKeyId, SecretAccessKey, and SessionToken. Run the following command to export them to environment variables:
-    ```
-    export AWS_ACCESS_KEY_ID=`echo $CREDS_JSON | jq '.Credentials.AccessKeyId' | tr -d '"'`
-    export AWS_SECRET_ACCESS_KEY=`echo $CREDS_JSON | jq '.Credentials.SecretAccessKey' | tr -d '"'`
-    export AWS_SESSION_TOKEN=`echo $CREDS_JSON | jq '.Credentials.SessionToken' | tr -d '"'`
-    CREDS_JSON=""
-    ```
-18. Now run the `make` command to access the EKS cluster by:
+14. Now run the `make` command to access the EKS cluster by:
     >NOTE: This command has to be run from the root folder of the code repository:
 
-    ```
-    make eks@grant-access
-    ```
-
-19. Run the following command to connect to EKS cluster:
     ```
     make eks@use
     ```
 
-20. Run the following command to list the pods in cluster. You should see the pods as shown in the screenshot below.
+15. Run the following command to list the pods in cluster. You should see the pods as shown in the screenshot below.
     ```
     kubectl get pods
     ```
 
     ![Get Pods](./images/getpods.png)
 
-21. The below command will clean up the existing load generator container that was deployed during the initial deployment. You need to run this command every time you want to run a new benchmark. Use the script [run-benchmark.sh](./run-benchmark.sh) that automates 21-22.
+17. If you plan to run benchmarks using distributed setup proceed to section "How to use the RTB guidance with N‌etworkBr‌idge". If you would like to run a load test internally (inside the Kubernetes cluster) you can start local benchmarks by initiating the load-generator along with the parameters.
     ```
     make benchmark@cleanup
-    ```
-    
-22. Start the benchmark by initiating the load-generator along with the parameters.
-    ```
     make benchmark@run TIMEOUT=100ms NUMBER_OF_JOBS=1 RATE_PER_JOB=200 NUMBER_OF_DEVICES=10000 DURATION=500s
     ```
     _You can supply following parameters to load-generator and perform benchmarks_
@@ -221,12 +170,12 @@ Increase the following service limits via Service Quotas section in AWS Console.
     ENABLE_PROFILER=1    # used to start profiling session, leave unset to disable
     ```
 
-23. Once the load-generator is started you can run the following port-forward command to connect to Grafana Dashboard.
+18. To observe metrics and dashboards in Grafanca:
     ```
     kubectl port-forward svc/prom-grafana 8080:80
     ```
 
-24. On your local/client instance open the URL [localhost:8080](http://localhost:8080) access Grafana Dashboard. 
+19. On your local/client instance open the URL [localhost:8080](http://localhost:8080) access Grafana Dashboard. 
 Use the following credentials to login (Turn off enhanced tracking if you are using Firefox)
 
     ```
@@ -236,15 +185,15 @@ Use the following credentials to login (Turn off enhanced tracking if you are us
 
     ![Grafana login](./images/aws-rtb-grafana-login.png)
 
-25. Once you login, click on the dashboard button on the left hamburger menu and select manage as shown in the figure below.
+20. Once you login, click on the dashboard button on the left hamburger menu and select manage as shown in the figure below.
 
     ![Dashboards](./images/aws-rtb-grafana-dashboards.png)
 
-26. Search and access 'bidder' dashboard from the list.
+21. Search and access 'bidder' dashboard from the list.
 
     ![Bidder](./images/aws-rtb-grafana-bidder.png)
 
-27. You will see the bid request that are being generated on the right side and latency on the left side of the dashboard as shown in the figure below.
+22. You will see the bid request that are being generated on the right side and latency on the left side of the dashboard as shown in the figure below.
 
     ![Benchmark](./images/benchmarksresults.png)
 
@@ -269,38 +218,186 @@ These benchmarks help demonstrate the Real-time-bidder application performance o
 * Use [update-node-group-size.sh](./update-node-group-size) to downsize the EKS cluster to zero to save compute costs while testing
 * Use [check-pod-logs.sh](./check-pod-logs.sh) to get the bidder logs for troubleshooting purposes
 
-# How to use ALB with RTB Kit
+# How to use NLB with RTB Kit
 
-1. Install ALB controller via helm refer - https://docs.aws.amazon.com/eks/latest/userguide/lbc-helm.html
-2. Attach Policy "AWSLoadBalancerControllerIAMPolicy" to the EKSWorkerRole "$cluster-name-EksWorkerRole"
-3. add tags to subnet kubernetes.io/cluster/eks-alb
-4. Make sure subnet route table is pointing to inter gateway
-5. Create ingress resource which should provision ALB (ingress file is already placed in current directory)
-6. EDIT deployment/infrastructure/Makefile with below
---->  TARGET="http://\<elb url>/bidrequest"
-7. Remove below line from deployment/infrastructure/charts/load-generator/templates/job.yaml
+The following are instructions to create either internal or external NLB for load testing. These can be used to simulate external traffic to the cluster and to compare latency between internal, external and direct connection to the cluster (e.g. through N‌etworkBr‌idge).
+
+## Internal NLB
+1. Deploy internal NLB: `kubectl apply -f deployment/infrastructure/deployment/bidder-nlb.yaml`
+2. Get DNS hostname of the loadbalancer: `kubectl get services bidder-nlb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'`
+
+## External NLB
+1. Deploy external NLB: `kubectl apply -f deployment/infrastructure/deployment/bidder-external.yaml`
+2. Get DNS hostname of the loadbalancer: `kubectl get services bidder-external -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'`
+
+# How to use the RTB guidance with N‌etworkBr‌idge
+
+## Responder (bidder application)
+
+The below steps do not reflect the EKS Endpoints approach yet, these steps will be included shortly. The current setup is showing the steps for internal NLB setup with N‌etworkBr‌idge. 
+
+Provision internal NLB for your responder app (see "How to use NLB with RTB Kit"). The NLB will be placed in the private subnets, marked with tag `kubernetes.io/role/internal-elb: 1` which is set by the infrastructure provisioning (through CDK).
+
+Run the following command to get subnets and security groups required to onboard your responder application:
+
+```
+aws elbv2 describe-load-balancers --names rtb-bidder-nlb
+```
+
+The command above assumes that the name of the NLB is `rtb-bidder-nlb`. If you modified it, please specify the name you applied. The output will contain DNS name, subnet ids and security groups that you will use for N‌etworkBr‌idge onboarding of the responder app:
+
+```
+            "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:<>",
+            "DNSName": "rtb-bidder-nlb-<postfix>.elb.us-east-1.amazonaws.com",
+            "LoadBalancerName": "rtb-bidder-nlb",
+            "Scheme": "internal",
+            "VpcId": "vpc-id",
+            "State": {
+                "Code": "active"
+            },
+            "Type": "network",
+            "AvailabilityZones": [
+                {
+                    "ZoneName": "us-east-1a",
+                    "SubnetId": "<subnet-1-id>",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1c",
+                    "SubnetId": "<subnet-2-id>",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1b",
+                    "SubnetId": "<subnet-3-id>",
+                    "LoadBalancerAddresses": []
+                }
+            ],
+            "SecurityGroups": [
+                "sg-003c8e171aa159548",
+                "sg-0a92e9c67ae598adb"
+            ],
+```
+
+## Deployment of Publisher (SSP) Infrastructure and Load Generator
+
+Your publisher infrastructure requires the following:
+
+1. AWS Account (generally, it is a separate account from the bidder application)
+2. VPC 
+3. EKS Cluster to deploy the publisher app (emulated by the load generator in this solution)
+4. `eksctl` tool installed locally (see https://eksctl.io/installation/ for details). 
+
+We have prepared commands for you to accomplish steps #2 and #3. 
+
+If you used this repo to provision DSP infrastructure, it is recommended to clone this repo in a separate folder, so that you can keep your own set of .env settings and avoid conflicts. When provisioning in the same account, use a different stack name for the DSP. 
+
+1. Configure your settings by creating a `.env` file in the root (use `envtemplate` as template). Update the `STACK_NAME`,`STACK_VARIANT` (DynamoDB/Aerospike/DynamoDBBasic) and the rest of the variables in the `.env` file. Set TARGET to the url of the DSP application to send to the traffic. 
+**Important:** Make sure the BUILD_SPEC is to `buildspec-loadgen.yml`. Also make sure STACK_NAME is unique and lowercase. Remove any trailing comments, like `# set this to a  unique name such as rtbkit-<your-alias>-<region>`. 
     ```
-    <           - --track-errors={{ .Values.trackErrors }}
-    <       {{- if $.Values.waitForService.enable }}
-    <       initContainers:
-    <         - name: wait-for-service
-    <           image: "{{ .Values.public_ecr_registry }}/{{ .Values.waitForService.image }}"
-    <           env:
-    <             - name: TARGETS
-    <               value: {{ include "load-generator.waitForServiceTargets" $ }}
-    <           args:
-    <             - 'sh'
-    <             - '-c'
-    <             - |
-    <               for TARGET in $TARGETS; do
-    <                 until wget --spider --no-check-certificate -T 5 $TARGET; do
-    <                   echo "Still waiting for $TARGET..."
-    <                   sleep 1;
-    <                 done;
-    <               done;
-    <       {{- end }}
-    <       securityContext:
-    <         {{- toYaml .Values.podSecurityContext | nindent 8 }}  
-    <shared
+    cp envtemplate .env
+    cat .env
+
+    STACK_NAME=rtbkit-<your-user-alias>-<region>
+    AWS_REGION=us-east-1
+    STACK_VARIANT=DynamoDbBasic
+    REPO_OWNER=shapirov103
+    REPO_NAME=guidance-for-building-a-real-time-bidder-for-advertising-on-aws
+    REPO_BRANCH=main
+    BUILD_SPEC=buildspec-loadgen.yml
+    TARGET_LOCAL="http://bidder/bidrequest"
+    TARGET_NETWORKBRIDGE="https://<your rtb app>.<acct>.<region>.dataplane.rtb.example.aws.dev/link/<link-id>/bidrequest"
+    TARGET_PUBLIC_NLB="http://<your-nlb-dns>.amazonaws.com/bidrequest"
+    TARGET=$(TARGET_NETWORKBRIDGE)
+
     ```
-8. run the load generator and monitor ALB metrics for traffic
+
+Note: the BUILD_SPEC parameter controls the build so that it only produces artifacts required for the SSP side. The stack will not create the EKS cluster. It will only build and upload images to ECR in the target account. 
+
+2. Start a new terminal session and navigate to the target account by setting AWS credentials and context to use it (e.g. switching AWS CLI profile). Starting a new session is required in order avoid context pollution from your previous runs. 
+
+3. Check if python3 and the python3 virtual environment are installed on your machine if not install python3:
+    ```
+    python3 --version
+    ```
+
+4. Set up CDK (installs the requirements and boto3 libraries and bootstraps):
+    ```
+    make cdk@setup
+    # validate the settings
+    make cdk@list
+    ```
+5. Deploy the CDK stack:
+    ```
+    make cdk@deploy
+    ```
+6. CDK will deploy the resources as shown below:
+
+    ![CDK Deployment](./images/CDKDeployment-2.png)
+    ![CDK Deployment](./images/CDKDeployment.png)
+
+7. On successful deployment you will see as following
+    ```
+    ✅ RTBBuildStack
+    ```
+
+8. After the CDK deployment is complete, a CodeBuild project will be provisioned ready to build and deploy the SSP portion (load generator) of `Real-Time-Bidding Solution` in your AWS Account. 
+
+9. Kick off the CodeBuild build by running the following command:
+
+```sh
+cd ../.. # return to the project root
+aws codebuild start-build --project-name "rtb-build-project"
+```
+This will take a few minutes. You can navigate to AWS Console (UI) and find the CodeBuild project named `rtb-build-prpject` and observe the execution of the latest run through the logs. You can verify that the build is successful by navigating to ECR and observing that it created ECR repositories name like `<YOUR_STACK_NAME>-load-generator`.
+
+10. (Ensure eksctl tool is installed locally) Run `make publisher-eks@provision` in the publisher account. This will provision a new VPC with a well-architected EKS cluster in Auto Mode. The cluster has an ARM Node Pool, managed Karpenter and a number of add-ons out of the box.
+
+11. The above command will automatically update your .kube/config. You can validate access by running:
+```
+kubectl config current-context # should produce something like <username>@publisher-eks.us-east-1.eksctl.io
+kubectl get nodepools
+```
+
+You will see nodepools `system` and `generic-workloads`. The latter is a pool based on Graviton instances to run load testing. 
+
+12. Onboard the private subnets of the created VPC as part of your publisher application in N‌etworkBr‌idge. 
+
+```
+aws eks describe-cluster --name publisher-eks --query "cluster.resourcesVpcConfig.subnetIds" --output text
+```
+
+Run `create-requester-rtb-app` (using onboarding guide).
+
+13. In your `.env` file set variable `TARGET_NETWORKBRIDGE` to the link that you established with the responder application. Then set the `TARGET` to point to the `TARGET_NETWORKBRIDGE`.
+
+```
+TARGET_NETWORKBRIDGE="https://<rtb-app-id>.<acct>.<region>.dataplane.rtb.example.aws.dev/link/<link-id>/bidrequest"
+TARGET=$(TARGET_NETWORKBRIDGE)
+```
+
+14. Make sure that the current `kubectl config current-context` points to the publisher-eks cluster. (See step 3). Kick off the load test by running one of the benchmark targets.
+
+```
+# run a small batch load test
+make benchmark@codekit
+```
+
+Note: in this setup benchmarks are running in distributed mode on a remote cluster accessing the responder app using N‌etworkBr‌idge provided network and broker. 
+
+15. If you performed all of these steps on the same machine then you have more than a single context in your kubernetes config. Here are some commands that will help you navigate in between the contexts. 
+
+See all available contexts. You should observe the cluster with the `STACK_NAME` that you provided, which corresponds to your responder app, as well as the `publisher-eks` cluster. 
+```
+kubectl config get-contexts
+```
+
+To switch context to the target cluster, copy its name (e.g. `arn:aws:eks:us-east-1:<AWS_ACCOUNT>:cluster/<STACK_NAME>`) and use the following:
+
+```
+kubectl config use-context  arn:aws:eks:us-east-1:<AWS_ACCOUNT>:cluster/<STACK_NAME>
+```
+
+Note: for cross account setup you need to authenticate to the target account before you can access the cluster. this can be achieved by changing the profile, authenticating using SSO, pasting session scope credentials as env vairables, etc. 
+
+

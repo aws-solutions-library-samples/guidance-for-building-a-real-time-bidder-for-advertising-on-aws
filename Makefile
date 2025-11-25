@@ -1,5 +1,7 @@
 include config.mk
 
+.CONTEXT_VARS := AWS_ACCOUNT AWS_REGION STACK_NAME REPO_BRANCH REPO_OWNER TARGET
+$(foreach v, $(.CONTEXT_VARS), $(info $(v) = $($(v))))
 .PHONY: help precommit
 
 help: ## Help for all commands
@@ -28,6 +30,7 @@ dist: ## Export the project to a ZIP.
 include apps/bidder/tools/Makefile
 include apps/model/tools/Makefile
 include deployment/infrastructure/Makefile
+include cdk/pipeline/Makefile
 include tools/*/Makefile
 
 # there must be empty line of the end (include cannot be last line) of file for autocomplete to work

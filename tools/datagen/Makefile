@@ -1,4 +1,4 @@
-include $(dir $(lastword $(MAKEFILE_LIST)))/../../config.mk
+# include $(dir $(lastword $(MAKEFILE_LIST)))/../../config.mk
 
 _PWD     = $(shell pwd | sed "s~/cygdrive/c~c:~")
 _APP_DIR = $(_PWD)

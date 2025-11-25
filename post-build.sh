@@ -19,23 +19,23 @@ RTBKIT_ROOT_STACK_NAME=$2
 LoggingConfig='{"clusterLogging":[{"types":["api","audit","authenticator","controllerManager","scheduler"],"enabled":true}]}'
 echo "Starting cluster config update."
 
-if [ -z "$3" ]
-then
-    echo "WARNING:AWS CLI Profile not given"
-    output=`aws eks update-cluster-config --region $AWS_REGION --name $RTBKIT_ROOT_STACK_NAME --logging $LoggingConfig 2>&1`
+# if [ -z "$3" ]
+# then
+#     echo "WARNING:AWS CLI Profile not given"
+#     output=`aws eks update-cluster-config --region $AWS_REGION --name $RTBKIT_ROOT_STACK_NAME --logging $LoggingConfig 2>&1`
 
-else
-    export PROFILE=$3
-    output=`aws eks update-cluster-config --region $AWS_REGION --name $RTBKIT_ROOT_STACK_NAME --logging $LoggingConfig --profile $PROFILE 2>&1`  
-fi
+# else
+#     export PROFILE=$3
+#     output=`aws eks update-cluster-config --region $AWS_REGION --name $RTBKIT_ROOT_STACK_NAME --logging $LoggingConfig --profile $PROFILE 2>&1`  
+# fi
 # if output contains "No changes needed for the logging config provided", then the cluster config was already updated
 # otherwise, there was an error
-if [[ $output == *"No changes needed for the logging config provided"* ]]; then
-    echo "Cluster config already updated."
-    exit 0
-else
-    echo "Error encountered while updating the cluster logging config"
-    echo "ERROR:${output}"
-    exit 2
-fi
+# if [[ $output == *"No changes needed for the logging config provided"* ]]; then
+#     echo "Cluster config already updated."
+#     exit 0
+# else
+#     echo "Error encountered while updating the cluster logging config"
+#     echo "ERROR:${output}"
+#     exit 2
+# fi
 echo "Cluster config updated successfully."

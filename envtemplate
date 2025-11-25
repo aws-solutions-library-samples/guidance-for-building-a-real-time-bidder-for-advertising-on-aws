@@ -1,0 +1,10 @@
+# copy this to .env file and set the values
+STACK_NAME= # set this to a  unique name such as rtbkit-<your-alias>-<region>
+AWS_REGION=us-east-1
+STACK_VARIANT=DynamoDBBasic
+REPO_OWNER=shapirov103 # set to your github handle or keep aws-solutions-library-samples
+REPO_NAME=guidance-rtb # set to your repo name or keep as guidance-for-building-a-real-time-bidder-for-advertising-on-aws
+REPO_BRANCH=main # or set to branch like "feature/removing-pipeline"
+TARGET_LOCAL="http://bidder/bidrequest"
+TARGET= # set to your destination such as Heimdall link endpoint, public NLB or set $TARGET_LOCAL
+BUILD_SPEC=buildspec.yml

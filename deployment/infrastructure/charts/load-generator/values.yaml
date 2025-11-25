@@ -21,18 +21,15 @@ targets:
   # Dynamic targets generation.
   dynamic:
     count: 0
-    template: "https://{{ .Values.stackName }}{{ .suffix }}.us-east-1.ab.clearcode.cc/bidrequest"
+    template: "https://{{ .Values.stackName }}{{ .suffix }}/bidrequest"
     suffixTemplate: "{{- if gt .index 0 -}}-{{ add1 .index }}{{ end }}"
 
   # Static list of target URLs.
   static: []
 
-# Single target URL.
-target: https://us-east-1.ab.clearcode.cc/bidrequest
-
 # Job parameters.
 numberOfJobs: 1
-awsRegion: us-west-2
+awsRegion: us-east-1
 stackName: ""
 
 image:
@@ -89,7 +86,7 @@ nodeSelector:
 # Wait until target is available.
 # Deploys initial container that holds on the load generator until the target is available.
 waitForService:
-  enable: true
+  enable: false
   # This image is within our ECR registry.
   image: alpine:3.12.2
   healthCheckPath: /healthz

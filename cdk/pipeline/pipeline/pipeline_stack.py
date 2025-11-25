@@ -3,13 +3,11 @@ import os
 from aws_cdk import (
     Stack,
     aws_codebuild as cb,
-    aws_codepipeline as cp,
-    aws_codepipeline_actions as cpa,
-    aws_iam as iam,
-    SecretValue
+    aws_iam as iam
 )
+
 from constructs import Construct
-class PipelineStack(Stack):
+class BuildStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, stage: str="dev" , **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -21,37 +19,30 @@ class PipelineStack(Stack):
         env_context = self.node.try_get_context(stage)
         shared_context = self.node.try_get_context('shared')
         
-        if not shared_context["REPO_OWNER"]:
-            repo_owner = "aws-solutions-library-samples"
-        else:
-            repo_owner = shared_context["REPO_OWNER"]
+        repo_owner = self.get_context_value("REPO_OWNER", shared_context, "aws-solutions-library-samples")
+        repo_name = self.get_context_value("REPO_NAME", shared_context, "guidance-for-building-a-real-time-bidder-for-advertising-on-aws")
+        root_stack_name = self.get_context_value("ROOT_STACK_NAME", shared_context, None)
 
-        if not shared_context["REPO_NAME"]:
-            repo_name = "guidance-for-building-a-real-time-bidder-for-advertising-on-aws"
-        else:
-            repo_name = shared_context["REPO_NAME"]
-
-        if not shared_context["ROOT_STACK_NAME"]:
-            root_stack_name = "aws-rtbkit"
+        if not root_stack_name:
+            raise ValueError("ROOT_STACK_NAME is required in the shared context. You can set it with OS Variable ROOT_STACK_NAME")
         else:
             # fix for issue #59 - Bucket name that prefixes stack name needs to be lowercase
             # and cannot have underscores
-            root_stack_name = shared_context["ROOT_STACK_NAME"].lower().replace("_", "-")
+            root_stack_name = root_stack_name.lower().replace("_", "-")
         
-        if not shared_context["STACK_VARIANT"]:
-            stack_variant = "DynamoDB"
-        else:
-            stack_variant = shared_context["STACK_VARIANT"]
+        stack_variant =  self.get_context_value("STACK_VARIANT", shared_context, "DynamoDBBasic")
+        repo_branch = self.get_context_value("REPO_BRANCH", env_context, "main")    
         
-        if not env_context["REPO_BRANCH"]:
-            repo_branch = "main"
-        else:
-            repo_branch = env_context["REPO_BRANCH"]
+        # print out all variables above
+        print("repo_owner (OS REPO_OWNER): ", repo_owner)
+        print("repo_name ($REPO_NAME): ", repo_name)
+        print("root_stack_name ($STACK_NAME): ", root_stack_name)
+        print("stack_variant: ", stack_variant)
+        print("repo_branch: ", repo_branch)
+        print("acc: ", acc)
+        print("reg: ", reg)
         
-        if not env_context["GITHUB_TOKEN_SECRET_ID"]:
-            secret_id = "rtbkit-github-token"
-        else:
-            secret_id = env_context["GITHUB_TOKEN_SECRET_ID"]
+        
 
         # fix for issue #79 code commit deprecation
         # the solution now points to the opensource github repo by default
@@ -61,27 +52,10 @@ class PipelineStack(Stack):
         cb_source = cb.Source.git_hub(
             owner=repo_owner,
             repo=repo_name,
-            webhook=True,
-            webhook_triggers_batch_build=True,
-            webhook_filters=[
-                cb.FilterGroup.in_event_of(cb.EventAction.PUSH).and_branch_is(repo_branch).and_commit_message_is("the commit message"),
-                # cb.FilterGroup.in_event_of(cb.EventAction.RELEASED).and_branch_is(repo_branch)
-            ]
+            webhook=False,
+            branch_or_ref=repo_branch
         )
         # Defines the artifact representing the sourcecode
-        source_artifact = cp.Artifact()
-        # Defines the artifact representing the cloud assembly
-        # (cloudformation template + all other assets)
-        cloud_assembly_artifact = cp.Artifact()
-
-        source_action=cpa.GitHubSourceAction(
-            action_name='GitHubSourceAction', 
-            owner=repo_owner,
-            repo=repo_name,
-            oauth_token=SecretValue.secrets_manager(secret_id),
-            output=source_artifact,
-            branch=repo_branch
-        )
 
         rtb_pipeline_role = iam.Role(self, id="rtbkit_codebuild_role", role_name="rtbkit_codebuild_role",
             assumed_by=iam.CompositePrincipal(
@@ -92,8 +66,10 @@ class PipelineStack(Stack):
         )
         # Fix for issue #61
         rtb_pipeline_role = self.add_managed_policies(rtb_pipeline_role)
+        
+        build_spec = self.get_context_value("BUILD_SPEC", shared_context, "buildspec.yml")
 
-        cb_project=cb.Project(self, "RTBPipelineProject",
+        cb_project = cb.Project(self, "rtb-build-project",
             environment={
                 "build_image": cb.LinuxBuildImage.AMAZON_LINUX_2_ARM_3,
                 "privileged": True,
@@ -103,45 +79,20 @@ class PipelineStack(Stack):
                 "RTBKIT_ROOT_STACK_NAME": (cb.BuildEnvironmentVariable(value=root_stack_name)),
                 "RTBKIT_VARIANT": cb.BuildEnvironmentVariable(value=stack_variant),
             },
+            build_spec=cb.BuildSpec.from_source_filename(build_spec),
             source=cb_source,
             role=rtb_pipeline_role,
+            project_name="rtb-build-project"
         )
-
-
-        pipeline = cp.Pipeline(
-            self, 'rtb-pipeline',
-            pipeline_name='RTBPipeline',
-            stages=[
-                cp.StageProps(stage_name="Source", actions=[source_action]),
-                cp.StageProps(
-                    stage_name="Build",
-                    actions=[
-                        cpa.CodeBuildAction(
-                            action_name="Build",
-                            # Configure your project here
-                            project=cb_project,
-                            input=source_artifact,
-                            role=rtb_pipeline_role,
-                        )
-                    ],
-                ),
-            ],
-            role=rtb_pipeline_role,
-        )
-
+        
         # https://stackoverflow.com/questions/63659802/cannot-assume-role-by-code-pipeline-on-code-pipeline-action-aws-cdk
-        cfn_pipeline = pipeline.node.default_child
-        cfn_pipeline.add_deletion_override("Properties.Stages.1.Actions.0.RoleArn")
-        cfn_pipeline.add_deletion_override("Properties.Stages.2.Actions.0.RoleArn")
-        cfn_pipeline.add_deletion_override("Properties.Stages.3.Actions.0.RoleArn")
-
         cfn_build = cb_project.node.default_child
         cfn_build.add_override("Properties.Environment.Type", "ARM_CONTAINER")
     
     # fix for issue #61
     def add_managed_policies(self, iamrole: iam.Role) -> iam.Role:
         """
-        loops through the list of role arns and add it to the input role object and retuns the same back
+        loops through the list of role arns and add it to the input role object and returns the same back
         """
         managed_policy_arns={"arn:aws:iam::aws:policy/AdministratorAccess",
                     "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
@@ -161,3 +112,27 @@ class PipelineStack(Stack):
             iamrole.add_managed_policy(mananged_policy)
 
         return iamrole
+    
+    def get_context_value(self, key: str, context: any, default_value: any) -> any:
+        """
+        Gets a value from environment variables first, then CDK context, or returns default value.
+        
+        Args:
+            key: The key to look up
+            default_value: The default value to return if key is not found
+        
+        Returns:
+            The value from environment, context, or default value
+        """
+
+        env_value = os.environ.get(key)
+        if env_value is not None:
+            return env_value
+            
+        # Then check CDK context if context is not none
+        if context is not None and key in context:
+            return context[key]
+            
+        # Return default if neither found
+        return default_value
+    

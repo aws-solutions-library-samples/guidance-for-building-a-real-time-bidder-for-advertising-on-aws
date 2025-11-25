@@ -55,6 +55,7 @@ ifeq ("$(wildcard deployment/infrastructure/ci/$(PROJECT_NAME)-stack\.yaml)","")
 	PROJECT_NAME_IS_VALID=$(error PROJECT_NAME is invalid, look at the *-stack.yaml files in deployment/infrastructure/ci)
 endif
 
+
 # Validate the parameters required by ci@* targets
 _validate@ci:
 	$(PROJECT_NAME_IS_VALID)
@@ -122,11 +123,21 @@ eks@provision-codekit-aerospike: eks@provision-prometheus
 eks@provision-codekit-aerospike: eks@provision-prometheus-adapter
 eks@provision-codekit-aerospike: eks@provision-ebs-csi
 eks@provision-codekit-aerospike: eks@provision-nvme
+eks@provision-codekit-aerospike: eks@provision-autoscaler
 
 eks@provision-codekit-dynamodb: eks@update-dashboards ## Provision basic services to EKS cluster
 eks@provision-codekit-dynamodb: eks@provision-prometheus
 eks@provision-codekit-dynamodb: eks@provision-prometheus-adapter
 eks@provision-codekit-dynamodb: eks@provision-ebs-csi
+eks@provision-codekit-dynamodb: eks@provision-nvme
+eks@provision-codekit-dynamodb: eks@provision-autoscaler
+
+eks@provision-codekit-dynamodbbasic: eks@update-dashboards ## Provision basic services to EKS cluster
+eks@provision-codekit-dynamodbbasic: eks@provision-prometheus
+eks@provision-codekit-dynamodbbasic: eks@provision-prometheus-adapter
+eks@provision-codekit-dynamodbbasic: eks@provision-ebs-csi
+eks@provision-codekit-dynamodbbasic: eks@provision-nvme
+eks@provision-codekit-dynamodbbasic: eks@provision-autoscaler
 
 eks@update-dashboards: ## Update Grafana dashboards on EKS
 	kubectl apply -k deployment/infrastructure/deployment/prometheus/dashboards
@@ -156,6 +167,20 @@ eks@provision-autoscaler: ## Provision Cluster Autoscaler
 		autoscaler autoscaler/cluster-autoscaler \
 		-f deployment/infrastructure/deployment/autoscaler/values.yaml \
 		--set "autoDiscovery.clusterName=$(STACK_NAME)"
+
+eks@provision-aws-loadbalancer-controller: ## Provision Cluster Autoscaler
+	helm repo add --force-update eks https://aws.github.io/eks-charts
+	helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  		-n kube-system \
+  		--set clusterName=$(STACK_NAME) \
+  		--set serviceAccount.create=true 
+
+eks@deploy-loadbalancers:
+# deploy external NLB to test bidder through public internet
+	kubectl apply -f deployment/infrastructure/deployment/bidder-external.yaml
+# deploy external NLB to access Grafana
+	kubectl apply -f deployment/infrastructure/deployment/grafana-external.yaml
+
 
 eks@provision-ebs-csi: ## Provision EBS CSI driver
 	helm repo add --force-update aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
@@ -204,9 +229,14 @@ eks@cleanup: ## Remove application from EKS
 	_=$(helm uninstall bidder 2>/dev/null)
 	_=$(helm uninstall model 2>/dev/null)
 
+publisher-eks@provision:
+	export DESIRED_VERSION="v3.17.3"
+	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+	envsubst < deployment/infrastructure/publisher-eks/cluster.yaml | eksctl create cluster -f  -
+	kubectl apply -f deployment/infrastructure/publisher-eks/nodepool.yaml
+
 ## All variables passed to the load generator are listed here with their defaults; remember to specify duration unit.
 benchmark@run: LOAD_GENERATOR_OVERLAY_TEMP=$(shell mktemp)
-benchmark@run: TARGET="http://bidder/bidrequest"
 benchmark@run: VALUES="$(LOAD_GENERATOR_OVERLAY_TEMP)"
 benchmark@run: IMAGE_PREFIX=$(STACK_NAME)-
 benchmark@run: ## Start benchmark
@@ -223,6 +253,7 @@ benchmark@run: ## Start benchmark
 		$(if $(SERVICE_COUNT),--set targets.dynamic.count=$(SERVICE_COUNT),) \
 		--set profilerOutput=$(PROFILER_OUTPUT) \
 		--set image.tag=$(LOAD_GENERATOR_IMAGE_VERSION) \
+		--set awsRegion=$(AWS_REGION) \
 		--set nodeSelector.pool=$(LOAD_GENERATOR_NODE_SELECTOR_POOL) \
 		--set stackName=$(STACK_NAME) \
 		--set image.repository=$(IMAGE_PREFIX)load-generator \
@@ -259,7 +290,7 @@ benchmark@cleanup-bidder: ## Cleanup pods after benchmark
 LOAD_GENERATOR_OVERLAY_TEMP:=$(shell mktemp)
 benchmark@codekit: ## Start a Codekit benchmark
 		envsubst < deployment/infrastructure/deployment/load-generator/overlay-codekit.yaml.tmpl > $(LOAD_GENERATOR_OVERLAY_TEMP) && \
-			TARGET="http://bidder/bidrequest"  $(MAKE) benchmark@run IMAGE_PREFIX=$(IMAGE_PREFIX) \
+			  $(MAKE) benchmark@run IMAGE_PREFIX=$(IMAGE_PREFIX) \
 				RATE_PER_JOB=0 NUMBER_OF_JOBS=1 NUMBER_OF_DEVICES=1000 DURATION=10m VALUES="$(LOAD_GENERATOR_OVERLAY_TEMP)"
 
 

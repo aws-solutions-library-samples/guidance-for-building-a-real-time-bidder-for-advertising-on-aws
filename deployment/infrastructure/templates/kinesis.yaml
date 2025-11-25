@@ -43,6 +43,34 @@ Parameters:
     AllowedValues: [ GZIP, HADOOP_SNAPPY, Snappy, ZIP, UNCOMPRESSED]
     Default: GZIP
 
+  Variant:
+    Type: String
+    Description: Variant of infrastructure to deploy
+    Default: 'CodekitDynamoDBBasic'
+    AllowedValues:
+      - 'Basic'
+      - 'BasicDax'
+      - 'AerospikeDataLoad'
+      - 'BenchmarkSmallDax'
+      - 'BenchmarkMediumDax'
+      - 'BenchmarkSmallDynamoDB'
+      - 'BenchmarkMediumDynamoDB'
+      - 'BenchmarkHTTP'
+      - 'BenchmarkKinesis'
+      - 'Benchmark'
+      - 'BenchmarkMediumAerospike'
+      - 'Hold'
+      - 'HoldAerospike'
+      - 'BenchmarkSingleAZ'
+      - 'BenchmarkStaticCPU'
+      - 'BenchmarkHTTPSingleAZ'
+      - 'BenchmarkAutoscale'
+      - 'BidderE2E'
+      - 'CodekitAerospike'
+      - 'CodekitDynamoDB'
+      - 'BenchmarkAB-629'
+      - 'CodekitDynamoDBBasic'
+
   ProducerRoleARN:
     Type: String
     Description: ARN of the role that's going to write to the stream
@@ -52,6 +80,9 @@ Conditions:
   CreateDeliveryResouces: !And
     - !Equals [!Ref DeliveryEnabled, 1]
     - !Not [!Equals [!Ref DataStreamShardCount, 0]]
+  IsBasicVariant: !Or
+    - !Equals [!Ref Variant, 'Basic']
+    - !Equals [!Ref Variant, 'CodekitDynamoDBBasic']
 
 Resources:
   S3Bucket:
@@ -112,7 +143,15 @@ Resources:
     Condition: CreateKinesisStream
     Properties:
       Name: !Ref DataStreamName
-      ShardCount: !Ref DataStreamShardCount
+      StreamModeDetails: 
+        !If
+          - IsBasicVariant
+          - StreamMode: ON_DEMAND
+          - !Ref AWS::NoValue
+      ShardCount: !If 
+        - IsBasicVariant
+        - !Ref AWS::NoValue
+        - !Ref DataStreamShardCount
       StreamEncryption:
         EncryptionType: KMS
         KeyId: !Ref DataStreamEncryptionKey

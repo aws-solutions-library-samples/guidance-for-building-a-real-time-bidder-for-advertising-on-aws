@@ -16,7 +16,7 @@ then
 fi
 clustername=$1
 size=$2
-nodegroups=`aws --profile rtb eks list-nodegroups --cluster-name $clustername | jq '.nodegroups[]' | tr -d "\""`
+nodegroups=`aws eks list-nodegroups --cluster-name $clustername | jq '.nodegroups[]' | tr -d "\""`
 
 while IFS= read -r line; do
     echo $line
@@ -25,7 +25,7 @@ while IFS= read -r line; do
     #   --cluster-name $clustername \
     #   --nodegroup-name $line \
     #   --scaling-config minSize=$size
-    aws --profile rtb eks update-nodegroup-config \
+    aws eks update-nodegroup-config \
       --cluster-name $clustername \
       --nodegroup-name $line \
       --scaling-config desiredSize=$size

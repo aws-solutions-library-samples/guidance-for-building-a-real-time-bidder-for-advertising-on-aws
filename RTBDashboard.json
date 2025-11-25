@@ -1,0 +1,526 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"total-request-count\"', 'Sum', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Request Count",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Counts",
+                        "min": 0
+                    },
+                    "right": {
+                        "showUnits": true,
+                        "label": ""
+                    }
+                },
+                "setPeriodToTimeRange": true
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 0,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"success-request-count\"', 'Sum', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Success Request Count",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Counts",
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 0,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"failure-request-count\"', 'Sum', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Failure Request Count",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "Counts",
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, HttpStatusCode, Link} MetricName=\"request-status-count\" HttpStatusCode=200', 'Sum', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "HTTP Status Code 200",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, HttpStatusCode, Link} MetricName=\"request-status-count\" HttpStatusCode=204', 'Sum', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "HTTP Status Code 204",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, HttpStatusCode, Link} MetricName=\"request-status-count\" (HttpStatusCode=400 OR HttpStatusCode=401 OR HttpStatusCode=402 OR HttpStatusCode=403 OR HttpStatusCode=404 OR HttpStatusCode=408)', 'Sum', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.HttpStatusCode')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "HTTP Status Code 4xx",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, HttpStatusCode, Link} MetricName=\"request-status-count\" (HttpStatusCode=500 OR HttpStatusCode=501 OR HttpStatusCode=502 OR HttpStatusCode=503 OR HttpStatusCode=504)', 'Sum', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.HttpStatusCode')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "HTTP Status Code 5xx",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 18,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"forwarding-latency\"', 'Average', 60)", "label": "${PROP('Dim.Link')} Average", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e2", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e3", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e4", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Forwarding Latency Overview",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 18,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"total-latency\"', 'Average', 60)", "label": "Expression1", "id": "e1", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"forwarding-latency\"', 'Average', 60)", "label": "Expression2", "id": "e2", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "e1/PERIOD(FIRST(e2))", "label": "${PROP('Dim.Link')} Average", "id": "e3", "region": "%AWS_REGION%" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "Expression4", "id": "e4", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "Expression5", "id": "e5", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "e4/PERIOD(FIRST(e5))", "label": "${PROP('Dim.Link')} P90", "id": "e6", "region": "%AWS_REGION%" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "Expression7", "id": "e7", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "Expression8", "id": "e8", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "e7/PERIOD(FIRST(e8))", "label": "${PROP('Dim.Link')} P95", "id": "e9", "region": "%AWS_REGION%" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "Expression10", "id": "e10", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "Expression11", "id": "e11", "region": "%AWS_REGION%", "visible": false } ],
+                    [ { "expression": "e10/PERIOD(FIRST(e11))", "label": "${PROP('Dim.Link')} P99", "id": "e12", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "RTBFabric Processing Latency Overview",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "μs",
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 24,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"total-latency\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Latency Average",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "μs",
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 6,
+            "y": 24,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Latency P90",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 24,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Latency P99",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 24,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Latency P95",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 30,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"forwarding-latency\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Forwarding Latency Average",
+                "yAxis": {
+                    "left": {
+                        "showUnits": false,
+                        "label": "μs",
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 6,
+            "y": 30,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Forwarding Latency P90",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 30,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Forwarding Latency P95",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 30,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"forwarding-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "${PROP('Dim.Link')}", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Forwarding Latency P99",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 18,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link} MetricName=\"total-latency\"', 'Average', 60)", "label": "${PROP('Dim.Link')} Average", "id": "e1", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P90\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e2", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P95\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e3", "region": "%AWS_REGION%", "stat": "Average" } ],
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, Link, Statistic} MetricName=\"total-latency\" Statistic=\"P99\"', 'Average', 60)", "label": "${PROP('Dim.Link')} ${PROP('Dim.Statistic')}", "id": "e4", "region": "%AWS_REGION%", "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "Total Latency Overview",
+                "yAxis": {
+                    "left": {
+                        "label": "μs",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, GatewayId} MetricName=\"no-bid-internal\" ', 'Sum', 60)", "label": "${PROP('Dim.GatewayId')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "No Bid Internal",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ { "expression": "SEARCH('{AWS/RTBFabric, GatewayId} MetricName=\"no-bid-external\" ', 'Sum', 60)", "label": "${PROP('Dim.GatewayId')}", "id": "e1", "region": "%AWS_REGION%" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "%AWS_REGION%",
+                "stat": "Average",
+                "period": 60,
+                "title": "No Bid External",
+                "yAxis": {
+                    "left": {
+                        "label": "Counts",
+                        "showUnits": false,
+                        "min": 0
+                    }
+                }
+            }
+        }
+    ]
+}
