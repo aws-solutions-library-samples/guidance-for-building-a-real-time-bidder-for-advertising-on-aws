@@ -1,5 +1,5 @@
 # Guidance for Building a Real Time Bidder for Advertising on AWS
-
+ 
 ### RTB Code Kit Deployment Guide
 # Guidance for Building a Real Time Bidder for Advertising on AWS
 
